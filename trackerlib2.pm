@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-use constant DEBUG => 0;
+use constant DEBUG => 1;
 
 require Data::Dumper;
 import  Data::Dumper qw(Dumper);
 require RPC::XML;
 require RPC::XML::Client;
 
-my $trackerurl = 'http://tracker.fem.tu-ilmenau.de/rpc/';
+my $trackerurl = 'http://tracker.fem.tu-ilmenau.de/rpc';
 
 # Parameters: project and then login, password or hostname, secret
 sub initTracker {
@@ -45,11 +45,11 @@ sub initTracker {
 			my $ret = $resp->value();
 			return undef if ($ret eq 'BAD_LOGIN');
 			if ($token) {
-				$trackerurl .= 'uid/'.$token;
+				$trackerurl .= '/uid/'.$token;
 			} else {
-				$trackerurl .= 'uid/'.$ret;
+				$trackerurl .= '/uid/'.$ret;
 			}
-			setCurrentProject($project);
+			setCurrentProject($opt{project});
 			return $ret;
 		}
 	} else {
@@ -60,7 +60,7 @@ sub initTracker {
 
 sub setCurrentProject {
 	my ($project) = @_;
-	$ret = common_getSingleInt(
+	my $ret = common_getSingleInt(
 		'C3TT.setCurrentProject',
 		RPC::XML::string->new($project)
 	);
@@ -69,15 +69,19 @@ sub setCurrentProject {
 		return 1;
 	}
 	print "Unbekanntes Projekt: $project\n";
-	my @ret2 = common_getRpcArray(
-		'C3TT.getProjects',
-		RPC::XML::boolean->new(false),
-		RPC::XML::boolean->new(false)
-	);
+	my @ret2 = getProjects();
 	print " Projekte auf Tracker:\n";
 	foreach (@ret2) {
 		print "  $_\n";
 	}
+}
+
+sub getProjects {
+	return common_getRpcArray(
+		'C3TT.getProjects',
+		RPC::XML::boolean->new(0),
+		RPC::XML::boolean->new(0)
+	);
 }
 
 sub common_getRpcHash {
@@ -240,7 +244,7 @@ sub getParentTicketProperties {
 sub getVIDfromTicketID {
 	my ($tid) = @_;
 	my $ret = getTicketProperty($tid, 'Fahrplan.ID');
-	if (defined($ret)) return $ret;
+	return $ret if (defined($ret));
 	return getTicketProperty($tid, 'Event.ID');
 }
 
@@ -286,7 +290,7 @@ sub releaseTicketToNextState {
 }
 
 sub releaseTicketAsBroken {
-	my ($tid) = @_;
+	my ($tid, $log) = @_;
 
 	return undef unless ($tid =~ /^\d+$/);
 	print "Markiere Ticket $tid als failed \n" if DEBUG;
