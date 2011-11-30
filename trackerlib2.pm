@@ -1,5 +1,33 @@
 #!/usr/bin/perl
 
+
+
+
+#  44: initTracker
+#  89: setCurrentProject
+# 107: getProjects
+# 115: common_getRpcHash
+# 135: common_getRpcArray
+# 156: common_executeVoid
+# 172: common_getSingleHash
+# 191: common_getSingleInt
+# 210: getHashKeyForValue
+# 222: getTicketProperty
+# 230: getTicketProperties
+# 243: ping
+# 265: getParentTicketProperties
+# 272: getVIDfromTicketID
+# 279: setTicketProperties
+# 298: grabNextTicketInState
+# 308: releaseTicketToNextState
+# 320: releaseTicketAsBroken
+# 332: addComment
+
+
+
+
+
+
 use strict;
 use warnings;
 
@@ -45,9 +73,11 @@ sub initTracker {
 			my $ret = $resp->value();
 			return undef if ($ret eq 'BAD_LOGIN');
 			if ($token) {
-				$trackerurl .= '/uid/'.$token;
+#				$trackerurl .= '/:uid/'.$token;
+				$trackerurl .= '/:'.$token;
 			} else {
-				$trackerurl .= '/uid/'.$ret;
+#				$trackerurl .= '/:uid/'.$ret;
+				$trackerurl .= '/:'.$ret;
 			}
 			setCurrentProject($opt{project});
 			return $ret;
@@ -206,13 +236,13 @@ sub getTicketProperties {
 	my %ret = common_getRpcHash(
 		'C3TT.getTicketProperties', 
 		RPC::XML::int->new($tid),
-		RPC::XML::string->new($pattern)
+#		RPC::XML::string->new($pattern)
 	);
 	print "Properties gefunden: " . Dumper (\%ret) . "\n" if DEBUG;
 	return %ret;
 }
 
-sub ping() {
+sub ping {
 	my ($ticket_id, $status, $logdelta) = @_;
 
 #        my $workaround = $trackerurl;
