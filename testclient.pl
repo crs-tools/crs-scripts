@@ -2,18 +2,16 @@
 
 print "start\n";
 
-require RPC::XML;
-require RPC::XML::Client;
 use Data::Dumper;
 require trackerlib2;
 
-initTracker('login' => 'xxx', 'password' => 'xxx', 'project' => '28c3')
-	or die "RPC Init-Fehler";
+# call script with these arguments in this order: hostname secret project
 
-my @projects = getProjects();
+initTracker('hostname' => shift, 'secret' => shift, 'project' => shift);
+my %projects = getProjects();
 print " Projekte auf Tracker:\n";
-foreach (@projects) {
-	print "  $_\n";
+foreach (keys(%projects)) {
+	print "  $_ => $projects{$_}\n";
 }
 
 my %props = getTicketProperties(1);
