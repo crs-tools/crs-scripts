@@ -1,113 +1,78 @@
 #!/usr/bin/perl
 
-
-
-
-#  44: initTracker
-#  89: setCurrentProject
-# 107: getProjects
-# 115: common_getRpcHash
-# 135: common_getRpcArray
-# 156: common_executeVoid
-# 172: common_getSingleHash
-# 191: common_getSingleInt
-# 210: getHashKeyForValue
-# 222: getTicketProperty
-# 230: getTicketProperties
-# 243: ping
-# 265: getParentTicketProperties
-# 272: getVIDfromTicketID
-# 279: setTicketProperties
-# 298: grabNextTicketInState
-# 308: releaseTicketToNextState
-# 320: releaseTicketAsBroken
-# 332: addComment
-
-
-
-
-
+# 39: initTracker
+# 79: loginIntoRpc
+# 90: loginIntoRpcAsHost
+# 103: setCurrentProject
+# 121: getProjects
+# 129: common_getRpcHash
+# 149: common_getRpcArray
+# 170: common_executeVoid
+# 186: common_getSingleHash
+# 205: common_getSingleInt
+# 224: getHashKeyForValue
+# 236: getTicketProperty
+# 244: getTicketProperties
+# 257: ping
+# 279: getParentTicketProperties
+# 286: getVIDfromTicketID
+# 293: setTicketProperties
+# 312: grabNextTicketInState
+# 322: releaseTicketToNextState
+# 334: releaseTicketAsBroken
+# 346: addComment
 
 use strict;
 use warnings;
 
 use constant DEBUG => 1;
+use constant SIMULATE => 1;
 
 require Data::Dumper;
 import  Data::Dumper qw(Dumper);
 require RPC::XML;
 require RPC::XML::Client;
+require Digest::MD5;
 
-my $trackerurl = 'http://tracker.fem.tu-ilmenau.de/rpc';
+my $trackerbase = 'http://tracker.28c3.fem-net.de/rpc/';
+my $trackerurl = undef;
+my $token = undef;
+my $fqdn = undef;
+my $project = undef;
+my $cli = undef;
+my %dummyProperties = ();
 
-# Parameters: project and then login, password or hostname, secret
+# Parameters: hostname, secret, [project]
 sub initTracker {
 	my %opt = @_;
 
-	my $cli = RPC::XML::Client->new($trackerurl);
-	my $resp;
-	my $token;
-	if ($opt{login} and $opt{password}) {
-		$resp = $cli->send_request(
-			'C3TT.login', #TODO gibts die noch?
-			RPC::XML::string->new($opt{login}),
-			RPC::XML::string->new($opt{password})
-		);
-	} elsif ($opt{hostname} and $opt{secret}) {
-		require Digest::MD5;
-		$token = Digest::MD5::md5_hex($opt{hostname}.$opt{secret});
-		$resp = $cli->send_request(
-			'C3TT.register',
-			RPC::XML::string->new($opt{hostname}),
-			RPC::XML::string->new($token)
-		);
-	} else {
-		warn 'Need login&password or hostname&secret';
+	print "init RPC \n" if DEBUG;
+	if (!defined($opt{'hostname'}) and !defined($opt{'secret'})) {
+		print STDERR "too few arguments for initTracker!\n";
 		return undef;
 	}
-	if (ref($resp)) {
-		if ($resp->is_fault) {
-			print "Fehler bei Login RPC-Methode\n" if DEBUG;
-			print Dumper($resp) if DEBUG;
-		} else {
-			my $ret = $resp->value();
-			return undef if ($ret eq 'BAD_LOGIN');
-			if ($token) {
-#				$trackerurl .= '/:uid/'.$token;
-				$trackerurl .= '/:'.$token;
-			} else {
-#				$trackerurl .= '/:uid/'.$ret;
-				$trackerurl .= '/:'.$ret;
-			}
-			setCurrentProject($opt{project});
-			return $ret;
-		}
-	} else {
-		print "RPC-Fehler: $resp\n";
-	}
-	return undef;
+	$fqdn = $opt{'hostname'};
+	$token = Digest::MD5::md5_hex($fqdn.$opt{'secret'});
+	$project = $opt{'project'};
+	initDummyProperties() if SIMULATE;
+	refreshUrl();
+}
+
+sub refreshUrl {
+	$trackerurl = $trackerbase . $token . '/' . $fqdn;
+	$trackerurl .= "/$project" if defined($project);
+	print "new tracker URL: '$trackerurl'\n" if DEBUG;
+	$cli = RPC::XML::Client->new($trackerurl) if !SIMULATE;
 }
 
 sub setCurrentProject {
-	my ($project) = @_;
-	my $ret = common_getSingleInt(
-		'C3TT.setCurrentProject',
-		RPC::XML::string->new($project)
-	);
-	if ($ret eq '1') {
-		#TODO rueckgabe is fantasie, muss noch angepasst werden
-		return 1;
-	}
-	print "Unbekanntes Projekt: $project\n";
-	my @ret2 = getProjects();
-	print " Projekte auf Tracker:\n";
-	foreach (@ret2) {
-		print "  $_\n";
-	}
+	$project = shift;
+	refreshUrl();
 }
 
 sub getProjects {
-	return common_getRpcArray(
+	return ('28c3' => '28. C.C.C.', 'iwut11' => 'Ilmenauer bla bla') if SIMULATE;
+	return common_getRpcHash(
 		'C3TT.getProjects',
 		RPC::XML::boolean->new(0),
 		RPC::XML::boolean->new(0)
@@ -138,7 +103,6 @@ sub common_getRpcArray {
 	my $function_name = shift;
 	my @params        = @_;
 
-	my $cli = RPC::XML::Client->new($trackerurl);
 	print "Executing $function_name \n" if DEBUG;
 	my $resp = $cli->send_request($function_name, @params);
 	if (ref($resp)) {
@@ -224,7 +188,7 @@ sub getHashKeyForValue {
 sub getTicketProperty {
 	my ($tid, $propname) = @_;
 
-	print "Suche Ticket mit ID $tid \n" if DEBUG;
+	print "querying property '$propname' of ticket # $tid \n" if DEBUG;
 	my %r = getTicketProperties($tid);
 	return $r{$propname};
 }
@@ -232,23 +196,22 @@ sub getTicketProperty {
 sub getTicketProperties {
 	my ($tid, $pattern) = @_; #TODO parameter pattern des RPC calls evtl. nutzen
 
-	print "Suche Ticket Properties fuer ID $tid \n" if DEBUG;
+	print "querying properties of ticket # $tid \n" if DEBUG;
+	return %dummyProperties if SIMULATE;
 	my %ret = common_getRpcHash(
 		'C3TT.getTicketProperties', 
 		RPC::XML::int->new($tid),
 #		RPC::XML::string->new($pattern)
 	);
-	print "Properties gefunden: " . Dumper (\%ret) . "\n" if DEBUG;
+	print "got properties from tracker: " . Dumper (\%ret) . "\n" if DEBUG;
 	return %ret;
 }
 
 sub ping {
 	my ($ticket_id, $status, $logdelta) = @_;
 
-#        my $workaround = $trackerurl;
-#        $workaround =~ s{/uid/}{/eid/}smo; #TODO ??? WTF
-	my $cli = RPC::XML::Client->new($trackerurl);
-	print "Ping\n" if DEBUG;
+	print "ping ($ticket_id, '$status', ...)\n" if DEBUG;
+	return if SIMULATE;
 	my $resp = common_getSingleHash(
 		'C3TT.ping', 
 		RPC::XML::int->new($ticket_id), 
@@ -256,19 +219,11 @@ sub ping {
 		RPC::XML::string->new($logdelta));
 	if (ref($resp)) {
 		if ($resp->is_fault) {
-			print "FEHLER: " . Dumper($resp->value);
+			print STDERR "ERROR: " . Dumper($resp->value);
 		}
-		return $resp;
 	} else {
-		print "RPC-Fehler: $resp\n";
+		print STDERR "RPC ERROR: $resp\n";
 	}
-}
-
-sub getParentTicketProperties {
-	my ($tid) = @_;
-	my %tmp = common_getRpcHash('C3TT.getParentTicketById', RPC::XML::int->new($tid));
-	print "Parent properties: " . Dumper(%tmp) . "\n" if DEBUG;
-	return %tmp;
 }
 
 sub getVIDfromTicketID {
@@ -278,29 +233,37 @@ sub getVIDfromTicketID {
 	return getTicketProperty($tid, 'Event.ID');
 }
 
+sub setTicketProperty {
+	my ($tid, $key, $value, undef) = @_;
+	print "setting property '$key' of ticket # $tid to value '$value' \n" if DEBUG;
+	if (SIMULATE) {
+		$dummyProperties{$key} = $value;
+	} else {
+		common_executeVoid(
+			'C3TT.setTicketProperty',
+			RPC::XML::int->new($tid),
+			RPC::XML::string->new($key),
+			RPC::XML::string->new($value)
+		);
+	}
+}
+
 sub setTicketProperties {
 	my ($tid, $hashref) = @_;
 
 	return unless defined $hashref;
 	my %props = %$hashref;
-	print "Setze properties von Ticket $tid \n" if DEBUG;
+	print "setting properties of ticket # $tid \n" if DEBUG;
 	foreach (keys(%props)) {
-		my $k = $_;
-		my $v = $props{$k};
-		print "Setze property $k auf '$v' \n" if DEBUG;
-		common_executeVoid(
-			'C3TT.setTicketProperty',
-			RPC::XML::int->new($tid),
-			RPC::XML::string->new($k),
-			RPC::XML::string->new($v)
-		);
+		setTicketProperty($tid, $_, $props{$_});
 	}
 }
 
 sub grabNextTicketInState {
-	my ($state) = @_;
+	my ($state, undef) = @_;
 
-	print "Hole freies Ticket mit Status '$state'\n" if DEBUG;
+	print "getting next free ticket in state '$state'\n" if DEBUG;
+	return 1 if SIMULATE;
 	return common_getSingleInt(
 		'C3TT.assignNextUnassignedForState',
 		RPC::XML::string->new($state)
@@ -308,10 +271,11 @@ sub grabNextTicketInState {
 }
 
 sub releaseTicketToNextState {
-	my ($tid, $log) = @_;
+	my ($tid, $log, undef) = @_;
 
 	return undef unless ($tid =~ /^\d+$/);
-	print "Entlasse Ticket $tid in naechsten Status\n" if DEBUG;
+	print "releasing ticket # $tid with success\n" if DEBUG;
+	return if SIMULATE;
 	return common_executeVoid(
 		'C3TT.setTicketDone', 
 		RPC::XML::int->new($tid),
@@ -320,10 +284,11 @@ sub releaseTicketToNextState {
 }
 
 sub releaseTicketAsBroken {
-	my ($tid, $log) = @_;
+	my ($tid, $log, undef) = @_;
 
 	return undef unless ($tid =~ /^\d+$/);
-	print "Markiere Ticket $tid als failed \n" if DEBUG;
+	print "releasing ticket # $tid AS BROKEN\n" if DEBUG;
+	return if SIMULATE;
 	return common_executeVoid(
 		'C3TT.setTicketFailed', 
 		RPC::XML::int->new($tid),
@@ -331,16 +296,35 @@ sub releaseTicketAsBroken {
 	);
 }
 
-sub addComment {
+sub addComment { #TODO nicht in API 3.0 derzeit
 	my ($tid, $comment) = @_;
 
 	return unless defined $comment;
-	print "Kommentiere Ticket $tid\n" if DEBUG;
+	print "commenting ticket # $tid\n" if DEBUG;
+	return if SIMULATE;
 	common_executeVoid(
 		'C3TT.addLog',
 		RPC::XML::int->new($tid),
 		RPC::XML::string->new($comment)
 	);
+}
+
+sub initDummyProperties {
+	%dummyProperties = (
+	'Fahrplan.Date' 	=> '2011-12-28',
+	'Fahrplan.Start' 	=> '00:15',
+	'Fahrplan.Duration' 	=> '01:00',
+	'Fahrplan.Room' 	=> 'Saal 1',
+	'Fahrplan.ID' 		=> '4721',
+	'Fahrplan.Slug' => 'pentanews_game_show_2k11',
+	'Fahrplan.Title' => 'Pentanews Game Show 2k11/3',
+	'Fahrplan.Abstract' => 'The Penta News Game Show rehashes a collection of absurd, day-to-day news items of 2011 to entertain the audience, let the Net participate, and make it\'s winners heroes.',
+	'Fahrplan.Person_list' => 'Alien8, _john, klobs',
+	'Fahrplan.Subtitle' => '42 new questions, new jokers, same concept, more fun than last year!',
+	'Fahrplan.Type' => 'contest',
+	'Fahrplan.Language' => 'en',
+	'Fahrplan.Track' => 'Show');
+
 }
 
 1;
