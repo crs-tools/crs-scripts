@@ -17,14 +17,14 @@ if (defined($tid) && $tid > 0) {
 	print "event # is $vid\n";
 
 	my $ret = checkCut($vid);
-#	if ($ret == 0) {
-#		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
-#		releaseTicketAsBroken($tid, 'CUTTING INCOMPLETE!');
-#		die ('CUTTING INCOMPLETE!');
-#	}
+	if ($ret == 0) {
+		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
+		releaseTicketAsBroken($tid, 'CUTTING INCOMPLETE!');
+		die ('CUTTING INCOMPLETE!');
+	}
 	# get necessary metadata from tracker
 	my $starttime = getTicketProperty($tid, 'Record.Starttime');
-$starttime = '2011-12-28-00:15';
+
 	# get metadata from fuse mount and store them in tracker
 	my ($in, $out, $intime, $outtime) = getCutmarks($vid, $starttime);
 	my %props = (
