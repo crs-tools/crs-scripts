@@ -9,7 +9,7 @@ my ($hostname, $secret, $project) = (shift, shift, shift);
 
 initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
 
-my $tid = grabNextTicketForState('merging');
+my $tid = grabNextTicketForState('releasing');
 
 if (defined($tid) && $tid > 0) {
 	print "releasing ticket # $tid\n";
