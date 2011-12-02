@@ -11,9 +11,8 @@ my ($hostname, $secret, $project) = (shift, shift, shift);
 # padding of record start and stop:
 my $startpadding = 300;
 my $endpadding = 300;
-# timezone used for current time:
-my $tz = 'CET';
 
+#######################################
 
 initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
 
