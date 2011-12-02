@@ -1,26 +1,28 @@
 #!/usr/bin/perl
 
-# 39: initTracker
-# 79: loginIntoRpc
-# 90: loginIntoRpcAsHost
-# 103: setCurrentProject
-# 121: getProjects
-# 129: common_getRpcHash
-# 149: common_getRpcArray
-# 170: common_executeVoid
-# 186: common_getSingleHash
-# 205: common_getSingleInt
-# 224: getHashKeyForValue
-# 236: getTicketProperty
-# 244: getTicketProperties
-# 257: ping
-# 279: getParentTicketProperties
-# 286: getVIDfromTicketID
-# 293: setTicketProperties
-# 312: grabNextTicketInState
-# 322: releaseTicketToNextState
-# 334: releaseTicketAsBroken
-# 346: addComment
+# 48: initTracker
+# 63: refreshUrl
+# 70: setCurrentProject
+# 75: getProjects
+# 84: common_getRpcHash
+# 104: common_getRpcArray
+# 124: common_executeVoid
+# 140: common_getSingleHash
+# 159: common_getSingleInt
+# 178: getHashKeyForValue
+# 190: getTicketProperty
+# 198: getTicketProperties
+# 212: ping
+# 231: getVIDfromTicketID
+# 238: setTicketProperty
+# 253: setTicketProperties
+# 264: getAllUnassignedTicketsInState
+# 275: grabNextTicketForState
+# 286: releaseTicketToNextState
+# 299: setTicketNextState
+# 311: releaseTicketAsBroken
+# 324: addComment
+# 337: initDummyProperties
 
 use strict;
 use warnings;
@@ -259,10 +261,21 @@ sub setTicketProperties {
 	}
 }
 
-sub grabNextTicketInState {
+sub getAllUnassignedTicketsInState {
 	my ($state, undef) = @_;
 
-	print "getting next free ticket in state '$state'\n" if DEBUG;
+	print "getting all free tickets for state '$state'\n" if DEBUG;
+	return (1,2,3) if SIMULATE;
+	return common_getRpcHash(
+		'C3TT.getAllUnassignedTicketsInState',
+		RPC::XML::string->new($state)
+	);
+}
+
+sub grabNextTicketForState {
+	my ($state, undef) = @_;
+
+	print "getting next free ticket for state '$state'\n" if DEBUG;
 	return 1 if SIMULATE;
 	return common_getSingleInt(
 		'C3TT.assignNextUnassignedForState',
@@ -283,6 +296,18 @@ sub releaseTicketToNextState {
 	);
 }
 
+sub setTicketNextState {
+	my ($tid, undef) = @_;
+
+	return undef unless ($tid =~ /^\d+$/);
+	print "moving ticket # $tid to next state\n" if DEBUG;
+	return if SIMULATE;
+	return common_executeVoid(
+		'C3TT.setTicketNextState', 
+		RPC::XML::int->new($tid)
+	);
+}
+
 sub releaseTicketAsBroken {
 	my ($tid, $log, undef) = @_;
 
@@ -296,7 +321,7 @@ sub releaseTicketAsBroken {
 	);
 }
 
-sub addComment { #TODO nicht in API 3.0 derzeit
+sub addLog {
 	my ($tid, $comment) = @_;
 
 	return unless defined $comment;

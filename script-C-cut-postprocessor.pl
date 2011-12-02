@@ -9,7 +9,7 @@ require fusevdv;
 my ($hostname, $secret, $project) = (shift, shift, shift);
 
 initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
-my $tid = grabNextTicketInState('cut');
+my $tid = grabNextTicketForState('copying');
 
 if (defined($tid) && $tid > 0) {
 	print "got ticket # $tid\n";

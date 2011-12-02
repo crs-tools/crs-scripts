@@ -9,7 +9,7 @@ require fusevdv;
 my ($hostname, $secret, $project) = (shift, shift, shift);
 
 initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
-my $tid = grabNextTicketInState('recorded');
+my $tid = grabNextTicketForState('merging');
 
 if (defined($tid) && $tid > 0) {
 	print "got ticket # $tid\n";
