@@ -11,7 +11,9 @@ my ($hostname, $secret, $project) = (shift, shift, shift);
 initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
 my $tid = grabNextTicketForState('copying');
 
-if (defined($tid) && $tid > 0) {
+if (!defined($tid) || $tid == 0) {
+	print "currently no tickets for copying\n";
+} else {
 	print "got ticket # $tid\n";
 	my $vid = getVIDfromTicketID($tid);
 	print "event # is $vid\n";
@@ -33,7 +35,7 @@ if (defined($tid) && $tid > 0) {
 		'Record.Cutintime' => $intime,
 		'Record.Cutouttime' => $outtime);
 	setTicketProperties($tid, \%props);
-	releaseTicketToNextState($tid, 'cut completed');
+	releaseTicketToNextState($tid, 'Cut postprocessor: cut completed, metadata written.');
 }
 
 

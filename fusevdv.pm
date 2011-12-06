@@ -16,6 +16,7 @@ my $debug = undef;
 use Data::Dumper;
 use POSIX;
 use DateTime;
+use Math::Round;
 use strict;
 
 
@@ -31,7 +32,7 @@ sub getPaddedTimes {
 	print "getPaddedTimes ($start, $duration, $startpadding, $endpadding)\n" if defined($debug);
 
 	my $startdatetime = undef;
-	if ($start =~ /(\d+)-(\d+)-(\d+)-(\d+):(\d+)/) {
+	if ($start =~ /(\d+)-(\d+)-(\d+)-(\d+)[\:-](\d+)/) {
 		$startdatetime = DateTime->new(
 			year      => $1,
 			month     => $2,
@@ -171,10 +172,12 @@ sub getCutmarks {
 	my $p = getMountPath($vid);
 	print "getting mark IN of event $vid\n" if defined($debug);
 	my $i = qx ( cat $p/inframe );
+	chop($i);
 	print "getting mark OUT of event $vid\n" if defined($debug);
 	my $o = qx ( cat $p/outframe );
+	chop($o);
 
-	my ($start, $end, undef) = getPaddedTimes ($rawstarttime, '00:00', ($i / -25), ($o / 25));
+	my ($start, $end, undef) = getPaddedTimes ($rawstarttime, '00:00', round ($i / -25), round ($o / 25));
 	return ($i, $o, $start, $end);
 }
 
