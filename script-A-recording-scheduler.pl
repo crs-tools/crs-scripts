@@ -14,20 +14,25 @@ my $endpadding = 300;
 
 #######################################
 
+$|=1;
+
 initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
 
 foreach ('scheduled', 'recording') {
 	my $state = $_;
+	print "querying tickets in state $state ...";
 	my @tids = getAllUnassignedTicketsInState($state);
-
-	if (!(@tids)) {
-		print "no tickets $state.\n";
+	print "\n";
+	if (!(@tids) || 0 == scalar(@tids)) {
+		print "no tickets currently $state.\n";
 		next;
-	} 
+	}
+	print "found " . @tids ." tickets\n";
 	foreach (@tids) {
-		my $tid = $_;
+		my %ticket = %$_;
+		my $tid = $ticket{'id'};
 		if (defined($tid) && $tid > 0) {
-			print "inspecting ticket # $tid\n";
+			print "inspecting ticket # $tid .";
 
 			# fetch metadata
 
@@ -45,16 +50,21 @@ foreach ('scheduled', 'recording') {
 
 			# transformation of metadata
 
+			print ".";
 			my $start = $startdate . '-' . $starttime; # put date and time together
 			my ($paddedstart, $paddedend, undef) = getPaddedTimes($start, $duration, $startpadding, $endpadding);
 			my $now = POSIX::strftime('%Y.%m.%d-%H_%M_%S', localtime());
+
+			print ".\n";
 
 			# evaluation
 
 			if ((($state eq 'scheduled') and ($now gt $paddedstart)) or
 				(($state eq 'recording') and ($now gt $paddedend))) {
-				print "moving ticket # $tid\n";
-				setTicketNextState($tid);
+				print "moving ticket # $tid from state $state to next state ...";
+				setTicketNextState($tid, $state, 'Recording Scheduler: ' .
+					'the current time is over schedule for state $state.');
+				print "\n";
 			}
 		}
 	}
