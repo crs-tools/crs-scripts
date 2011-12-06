@@ -5,6 +5,7 @@ my $mountpath = "/c3mnt/fuse/";
 my $binpath = "/usr/bin/";
 my $capdir = "/c3mnt/pieces/";
 my $capprefix = "feld";
+my $capprefix2capdir = 1; # wether or not the capprefix with parameter is appended to the capdir
 my $defaultlength = 7200;  # Laenge des gefusten Videos (vorm Schnitt) in Sekunden, falls kein konkreter Wert bekannt ist
 my $introdir = "/c3mnt/intros/";
 my $outrofile = "/c3mnt/outro/outro.dv";
@@ -70,7 +71,7 @@ sub getFuseMounts {
 	my @mounts = split("\n", $t);
 	my @ret = ();
 	foreach(@mounts) {
-		if ($_ =~ /on\ \/[^\ ]+(\d{4})\ /) {
+		if ($_ =~ /on\ \/[^\s]+\/(\d+)\s/) {
 			push(@ret, $1);
 		}
 	}
@@ -140,10 +141,12 @@ sub doFuseMount {
 
 	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
 	$room = $capprefix . $room;
+	my $_capdir = $capdir;
+	$_capdir .= $room if ($capprefix2capdir);
 	print "mounting FUSE: id=$vid room=$room start=$starttime ".
 		"length=$length\n" if defined($debug);
 	qx ( mkdir -p $basepath/$vid );
-	my $fusecmd = " $binpath/fuse-vdv p=${room}- c=$capdir st=$starttime ot=$length ";
+	my $fusecmd = " $binpath/fuse-vdv p=${room}- c=$_capdir st=$starttime ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=$intro ";
