@@ -68,9 +68,9 @@ if (defined($tid) && $tid > 0) {
 	my $r = doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	if (defined($r) && $r) {
 		setTicketProperties($tid, \%props); # when successful, do actually write back properties
-		releaseTicketToNextState($tid, 'FUSE mount created successfully.');
+		releaseTicketToNextState($tid, 'Mount4cut: FUSE mount created successfully.');
 	} else {
-		releaseTicketAsBroken($tid, 'ERROR: could not create FUSE mount!');
+		releaseTicketAsBroken($tid, 'Mount4cut: ERROR: could not create FUSE mount!');
 	}
 }
 
