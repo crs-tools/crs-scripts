@@ -270,7 +270,7 @@ sub setTicketProperty {
 }
 
 sub setTicketProperties {
-	my ($tid, $hashref) = @_;
+	my ($tid, $hashref, undef) = @_;
 
 	return unless defined $hashref;
 	my %props = %$hashref;
@@ -300,7 +300,7 @@ sub grabNextTicketForState {
 		'C3TT.assignNextUnassignedForState',
 		RPC::XML::string->new($state)
 	);
-	return undef if (!defined($ret));
+	return undef if (!defined($ret) || 0 == $ret);
 	my %ticket = %$ret;
 	return $ticket{'id'};
 }
