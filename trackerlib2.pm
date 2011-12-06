@@ -295,11 +295,14 @@ sub grabNextTicketForState {
 	my ($state, undef) = @_;
 
 	print "getting next unassigned ticket for state '$state'\n" if DEBUG;
-	return 1 if SIMULATE or READONLY;
-	return common_getSingleInt(
+	return 1 if SIMULATE;
+	my $ret = common_getSingleInt(
 		'C3TT.assignNextUnassignedForState',
 		RPC::XML::string->new($state)
 	);
+	return undef if (!defined($ret));
+	my %ticket = %$ret;
+	return $ticket{'id'};
 }
 
 sub releaseTicketToNextState {
