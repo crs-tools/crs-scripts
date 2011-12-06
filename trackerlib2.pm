@@ -27,8 +27,9 @@
 use strict;
 use warnings;
 
-use constant DEBUG => 1;
-use constant SIMULATE => 1;
+use constant DEBUG => 0;
+use constant SIMULATE => 0;
+use constant READONLY => 0;
 
 require Data::Dumper;
 import  Data::Dumper qw(Dumper);
@@ -74,11 +75,28 @@ sub setCurrentProject {
 
 sub getProjects {
 	return ('28c3' => '28. C.C.C.', 'iwut11' => 'Ilmenauer bla bla') if SIMULATE;
-	return common_getRpcHash(
+	return common_getRpcArray(
 		'C3TT.getProjects',
 		RPC::XML::boolean->new(0),
 		RPC::XML::boolean->new(0)
 	);
+}
+
+sub getServices {
+	return ('recording', 'merging', 'copying',
+		'encoding', 'postprocessing', 'releasing') if SIMULATE;
+	return common_getRpcArray(
+		'C3TT.getServices',
+		RPC::XML::boolean->new(0),
+		RPC::XML::boolean->new(0)
+	);
+}
+
+sub common_RpcError {
+	my $ref = shift;
+	print "FEHLER: " . Dumper($ref) if DEBUG>1;
+	print "FEHLER: " . $ref->{'faultString'} ."\n" unless DEBUG>1;
+	exit;	
 }
 
 sub common_getRpcHash {
@@ -90,7 +108,7 @@ sub common_getRpcHash {
 	my $resp = $cli->send_request($function_name, @params);
 	if (ref($resp)) {
 		if ($resp->is_fault) {
-			print "FEHLER: " . Dumper($resp->value);
+			common_RpcError($resp->value);
 		} else {
 			my $retref = $resp->value();
 			return %$retref;
@@ -98,7 +116,7 @@ sub common_getRpcHash {
 	} else {
 		print "RPC-Fehler: $resp\n";
 	}
-	return {};
+	return undef;
 }
 
 sub common_getRpcArray {
@@ -109,7 +127,7 @@ sub common_getRpcArray {
 	my $resp = $cli->send_request($function_name, @params);
 	if (ref($resp)) {
 		if ($resp->is_fault) {
-			print "FEHLER: " . Dumper($resp->value);
+			common_RpcError($resp->value);
 		} else {
 			my $retref = $resp->value();
 			print "Array returned " . Dumper($retref) . "\n" if DEBUG;
@@ -118,7 +136,7 @@ sub common_getRpcArray {
 	} else {
 		print "RPC-Fehler: $resp\n";
 	}
-	return ();
+	return undef;
 }
 
 sub common_executeVoid {
@@ -130,7 +148,7 @@ sub common_executeVoid {
 	my $resp = $cli->send_request($function_name, @params);
 	if (ref($resp)) {
 		if ($resp->is_fault) {
-			print "FEHLER: " . Dumper($resp->value);
+			common_RpcError($resp->value);
 		}
 	} else {
 		print "RPC-Fehler: $resp\n";
@@ -146,7 +164,7 @@ sub common_getSingleHash {
 	my $resp = $cli->send_request($function_name, @params);
 	if (ref($resp)) {
 		if ($resp->is_fault) {
-			print "FEHLER: " . Dumper($resp->value);
+			common_RpcError($resp->value);
 		} else {
 			my $retref = $resp->value();
 			return %$retref;
@@ -154,6 +172,7 @@ sub common_getSingleHash {
 	} else {
 		print "RPC-Fehler: $resp\n";
 	}
+	return undef;
 }
 
 sub common_getSingleInt {
@@ -165,7 +184,7 @@ sub common_getSingleInt {
 	my $resp = $cli->send_request($function_name, @params);
 	if (ref($resp)) {
 		if ($resp->is_fault) {
-			print "FEHLER: " . Dumper($resp->value);
+			common_RpcError($resp->value);
 		} else {
 			return $resp->value();
 		}
@@ -205,7 +224,7 @@ sub getTicketProperties {
 		RPC::XML::int->new($tid),
 #		RPC::XML::string->new($pattern)
 	);
-	print "got properties from tracker: " . Dumper (\%ret) . "\n" if DEBUG;
+	print "got properties from tracker: " . Dumper (\%ret) . "\n" if DEBUG>1;
 	return %ret;
 }
 
@@ -213,7 +232,7 @@ sub ping {
 	my ($ticket_id, $status, $logdelta) = @_;
 
 	print "ping ($ticket_id, '$status', ...)\n" if DEBUG;
-	return if SIMULATE;
+	return if SIMULATE or READONLY;
 	my $resp = common_getSingleHash(
 		'C3TT.ping', 
 		RPC::XML::int->new($ticket_id), 
@@ -238,7 +257,7 @@ sub getVIDfromTicketID {
 sub setTicketProperty {
 	my ($tid, $key, $value, undef) = @_;
 	print "setting property '$key' of ticket # $tid to value '$value' \n" if DEBUG;
-	if (SIMULATE) {
+	if (SIMULATE or READONLY) {
 		$dummyProperties{$key} = $value;
 	} else {
 		common_executeVoid(
@@ -264,10 +283,10 @@ sub setTicketProperties {
 sub getAllUnassignedTicketsInState {
 	my ($state, undef) = @_;
 
-	print "getting all free tickets for state '$state'\n" if DEBUG;
+	print "getting all unassigned tickets for state '$state'\n" if DEBUG;
 	return (1,2,3) if SIMULATE;
-	return common_getRpcHash(
-		'C3TT.getAllUnassignedTicketsInState',
+	return common_getRpcArray(
+		'C3TT.getUnassignedTicketsInState',
 		RPC::XML::string->new($state)
 	);
 }
@@ -275,8 +294,8 @@ sub getAllUnassignedTicketsInState {
 sub grabNextTicketForState {
 	my ($state, undef) = @_;
 
-	print "getting next free ticket for state '$state'\n" if DEBUG;
-	return 1 if SIMULATE;
+	print "getting next unassigned ticket for state '$state'\n" if DEBUG;
+	return 1 if SIMULATE or READONLY;
 	return common_getSingleInt(
 		'C3TT.assignNextUnassignedForState',
 		RPC::XML::string->new($state)
@@ -288,7 +307,7 @@ sub releaseTicketToNextState {
 
 	return undef unless ($tid =~ /^\d+$/);
 	print "releasing ticket # $tid with success\n" if DEBUG;
-	return if SIMULATE;
+	return if SIMULATE or READONLY;
 	return common_executeVoid(
 		'C3TT.setTicketDone', 
 		RPC::XML::int->new($tid),
@@ -297,14 +316,16 @@ sub releaseTicketToNextState {
 }
 
 sub setTicketNextState {
-	my ($tid, undef) = @_;
+	my ($tid, $state, $log, undef) = @_;
 
 	return undef unless ($tid =~ /^\d+$/);
-	print "moving ticket # $tid to next state\n" if DEBUG;
-	return if SIMULATE;
+	print "moving ticket # $tid from state $state to next state\n" if DEBUG;
+	return if SIMULATE or READONLY;
 	return common_executeVoid(
 		'C3TT.setTicketNextState', 
-		RPC::XML::int->new($tid)
+		RPC::XML::int->new($tid),
+		RPC::XML::string->new($state),
+		RPC::XML::string->new($log)
 	);
 }
 
@@ -313,7 +334,7 @@ sub releaseTicketAsBroken {
 
 	return undef unless ($tid =~ /^\d+$/);
 	print "releasing ticket # $tid AS BROKEN\n" if DEBUG;
-	return if SIMULATE;
+	return if SIMULATE or READONLY;
 	return common_executeVoid(
 		'C3TT.setTicketFailed', 
 		RPC::XML::int->new($tid),
@@ -326,7 +347,7 @@ sub addLog {
 
 	return unless defined $comment;
 	print "commenting ticket # $tid\n" if DEBUG;
-	return if SIMULATE;
+	return if SIMULATE or READONLY;
 	common_executeVoid(
 		'C3TT.addLog',
 		RPC::XML::int->new($tid),
