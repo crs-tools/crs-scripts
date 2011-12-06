@@ -8,6 +8,13 @@ require fusevdv;
 
 my ($hostname, $secret, $project) = (shift, shift, shift);
 
+if (!defined($project)) {
+	# print usage
+	print STDERR "Too few parameters given!\nUsage:\n\n";
+	print STDERR "./script-A-.... <hostname> <secret> <project slug>\n\n";
+	exit 1;
+}
+
 # padding of record start and stop:
 my $startpadding = 300;
 my $endpadding = 300;
