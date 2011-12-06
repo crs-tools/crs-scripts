@@ -9,12 +9,13 @@ my $defaultlength = 7200;  # Laenge des gefusten Videos (vorm Schnitt) in Sekund
 my $introdir = "/c3mnt/intros/";
 my $outrofile = "/c3mnt/outro/outro.dv";
 
-#my $debug = undef;
-my $debug = "x";
+my $debug = undef;
+#my $debug = "x";
 
 use Data::Dumper;
 use POSIX;
-use DateTime::Format::Strptime;
+use DateTime;
+use strict;
 
 
 
@@ -28,8 +29,22 @@ sub getPaddedTimes {
 	my ($start, $duration, $startpadding, $endpadding, undef) = @_;
 	print "getPaddedTimes ($start, $duration, $startpadding, $endpadding)\n" if defined($debug);
 
-	my $parser = DateTime::Format::Strptime->new('pattern' => '%Y-%m-%d-%H:%M', 'locale' => 'de_DE', 'time_zone' => 'Europe/Berlin');
-	my $startdatetime = $parser->parse_datetime($start);
+	my $startdatetime = undef;
+	if ($start =~ /(\d+)-(\d+)-(\d+)-(\d+):(\d+)/) {
+		$startdatetime = DateTime->new(
+			year      => $1,
+			month     => $2,
+			day       => $3,
+			hour      => $4,
+			minute    => $5,
+			second    => 0,
+			time_zone => 'Europe/Berlin',
+		);
+	} else {
+		print STDERR "start parameter has incorrect format!\n";
+		return undef;
+	}
+	my $enddatetime = $startdatetime->clone();
 	$startdatetime->add('seconds' => -$startpadding) if (defined($startpadding) and $startpadding =~ /^-?[0-9]+$/);
 	my $paddedstart = $startdatetime->ymd('.') . '-' . $startdatetime->hms('_');
 
@@ -41,7 +56,6 @@ sub getPaddedTimes {
 		return undef;
 	}
 
-	my $enddatetime = $parser->parse_datetime($start);
 	$enddatetime->add('seconds' => $durationseconds);
 	$enddatetime->add('seconds' => $endpadding) if (defined($endpadding) and $endpadding =~ /^-?[0-9]+$/);
 	my $paddedend = $enddatetime->ymd('.') . '-' . $enddatetime->hms('_');
@@ -79,7 +93,7 @@ sub isVIDmounted {
 			if (-f$pidfile) {
 				return 1;
 			} else {
-				# FUSE must have been died
+				# FUSE seems to be gone
 				doFuseUnmount($vid);
 			}
 		}
@@ -129,7 +143,7 @@ sub doFuseMount {
 	print "mounting FUSE: id=$vid room=$room start=$starttime ".
 		"length=$length\n" if defined($debug);
 	qx ( mkdir -p $basepath/$vid );
-	$fusecmd = " $binpath/fuse-vdv p=${room}- c=$capdir st=$starttime ot=$length ";
+	my $fusecmd = " $binpath/fuse-vdv p=${room}- c=$capdir st=$starttime ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=$intro ";
