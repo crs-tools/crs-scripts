@@ -1,17 +1,19 @@
 #!/usr/bin/perl -W
 
-my $basepath = "/c3mnt/fuse/";
-my $mountpath = "/c3mnt/fuse/";
-my $binpath = "/usr/bin/";
-my $capdir = "/c3mnt/pieces/";
-my $capprefix = "feld";
+my $basepath = '/c3mnt/fuse/';
+my $mountpath = '/c3mnt/fuse/';
+my $binpath = '/usr/bin/';
+my $capdir = '/c3mnt/pieces/';
+my $capprefix = 'feld';
 my $capprefix2capdir = 1; # wether or not the capprefix with parameter is appended to the capdir
 my $defaultlength = 7200;  # Laenge des gefusten Videos (vorm Schnitt) in Sekunden, falls kein konkreter Wert bekannt ist
-my $introdir = "/c3mnt/intros/";
-my $outrofile = "/c3mnt/outro/outro.dv";
+my $introdir = '/c3mnt/intros/';
+my $outrofile = '/c3mnt/outro/outro.dv';
+my $repairdir = '/c3mnt/repaired';
+my $framesize = 144000;
+my $fps = 25;
 
 my $debug = undef;
-#my $debug = "x";
 
 use Data::Dumper;
 use POSIX;
@@ -103,6 +105,12 @@ sub isVIDmounted {
 	return 0;
 }
 
+sub getSourceFileLengthInSeconds {
+	my $filepath = shift;
+	my $filesize = -s $filepath ; #;{ } <-- fuer den highlighter...
+	return round($filesize / ( $framesize * $fps));
+}
+
 sub checkCut {
 	my $vid = shift;
 	return 0 unless defined($vid);
@@ -133,8 +141,8 @@ sub doFuseMount {
 	my $starttime = shift;
 	my $length = shift;
 	
-	return if isVIDmounted($vid);
 	return unless defined($starttime);
+	doFuseUnmount($vid) if isVIDmounted($vid);
 	$length = $defaultlength unless defined($length);
 
 	my $intro = $introdir . $vid . ".dv";
@@ -148,6 +156,43 @@ sub doFuseMount {
 		"length=$length\n" if defined($debug);
 	qx ( mkdir -p $basepath/$vid );
 	my $fusecmd = " $binpath/fuse-vdv p=${room}- c=$_capdir st=$starttime ot=$length ";
+	# check existence of intro and outro
+	if ( -e $intro ) {
+		$fusecmd .= " intro=$intro ";
+	} else {
+		print STDERR "WARNING: intro file doesn't exist! ($intro)\n";
+	}
+	if ( -e $outro ) {
+		$fusecmd .= " outro=$outro ";
+	} else {
+		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
+	}
+	$fusecmd .= " -oallow_other,use_ino $mountpath/$vid ";
+	print "FUSE cmd: $fusecmd\n";
+	qx ( $fusecmd );
+	return isVIDmounted($vid);
+}
+
+sub doFuseRepairMount {
+	my $vid = shift;
+	my $room = shift;
+	my $replacement = shift;
+	
+	return 0 unless defined($replacement);
+	my $replacementpath = $repairdir . '/' . $replacement . '.dv';
+	return 0 unless -f $replacementpath;
+	print "(re)mounting FUSE with repaired file $replacementpath\n" if defined($debug);
+	doFuseUnmount($vid) if isVIDmounted($vid);
+	my $length = getSourceFileLengthInSeconds($replacementpath);
+
+	my $intro = $introdir . $vid . ".dv";
+	my $outro = $outrofile;
+
+	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
+	print "mounting FUSE: id=$vid source=$replacementpath ".
+		"length=$length\n" if defined($debug);
+	qx ( mkdir -p $basepath/$vid );
+	my $fusecmd = " $binpath/fuse-vdv p=$replacement c=$repairdir st=.dv ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=$intro ";
