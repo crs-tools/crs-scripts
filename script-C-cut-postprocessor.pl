@@ -1,31 +1,39 @@
 #!/usr/bin/perl -W
 
-use Data::Dumper;
-require trackerlib2;
 require fusevdv;
+require C3TT::Client;
+require boolean;
 
-# Call this script with hostname, secret and project slug as parameter!
+# Call this script with secret and project slug as parameter!
 
-my ($hostname, $secret, $project) = (shift, shift, shift);
+my ($secret, $project) = (shift, shift);
 
-initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
-my $tid = grabNextTicketForState('copying');
+if (!defined($project)) {
+	# print usage
+	print STDERR "Too few parameters given!\nUsage:\n\n";
+	print STDERR "./script-.... <secret> <project slug>\n\n";
+	exit 1;
+}
 
-if (!defined($tid) || $tid == 0) {
+my $tracker = C3TT::Client->new('http://tracker.28c3.fem-net.de/rpc', 'C3TT', $secret);
+$tracker->setCurrentProject($project);
+my $ticket = $tracker->assignNextUnassignedForState('copying');
+
+if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for copying\n";
 } else {
-	print "got ticket # $tid\n";
-	my $vid = getVIDfromTicketID($tid);
-	print "event # is $vid\n";
+	my $tid = $ticket->{id};
+	my $vid = $ticket->{fahrplan_id};
+	print "got ticket # $tid for event $vid\n";
 
 	my $ret = checkCut($vid);
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
-		releaseTicketAsBroken($tid, 'CUTTING INCOMPLETE!');
+		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE!');
 		die ('CUTTING INCOMPLETE!');
 	}
 	# get necessary metadata from tracker
-	my $starttime = getTicketProperty($tid, 'Record.Starttime');
+	my $starttime = $tracker->getTicketProperty($tid, 'Record.Starttime');
 
 	# get metadata from fuse mount and store them in tracker
 	my ($in, $out, $intime, $outtime) = getCutmarks($vid, $starttime);
@@ -34,8 +42,8 @@ if (!defined($tid) || $tid == 0) {
 		'Record.Cutout' => $out,
 		'Record.Cutintime' => $intime,
 		'Record.Cutouttime' => $outtime);
-	setTicketProperties($tid, \%props);
-	releaseTicketToNextState($tid, 'Cut postprocessor: cut completed, metadata written.');
+	$tracker->setTicketProperties($tid, \%props);
+	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
 }
 
 

@@ -1,17 +1,17 @@
 #!/usr/bin/perl -W
 
 require POSIX;
-require trackerlib2;
 require fusevdv;
+require C3TT::Client;
 
-# Call this script with hostname, secret and project slug as parameter!
+# Call this script with secret and project slug as parameter!
 
-my ($hostname, $secret, $project) = (shift, shift, shift);
+my ($secret, $project) = (shift, shift);
 
 if (!defined($project)) {
 	# print usage
 	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-A-.... <hostname> <secret> <project slug>\n\n";
+	print STDERR "./script-.... <secret> <project slug>\n\n";
 	exit 1;
 }
 
@@ -23,19 +23,21 @@ my $endpadding = 300;
 
 $|=1;
 
-initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
+my $tracker = C3TT::Client->new('http://tracker.28c3.fem-net.de/rpc', 'C3TT', $secret);
+$tracker->setCurrentProject($project);
+#initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
 
 foreach ('scheduled', 'recording') {
 	my $state = $_;
 	print "querying tickets in state $state ...";
-	my @tids = getAllUnassignedTicketsInState($state);
+	my $tickets = $tracker->getUnassignedTicketsInState($state);
 	print "\n";
-	if (!(@tids) || 0 == scalar(@tids)) {
+	if (!($tickets) || 0 == scalar(@$tickets)) {
 		print "no tickets currently $state.\n";
 		next;
 	}
-	print "found " . @tids ." tickets\n";
-	foreach (@tids) {
+	print "found " . scalar(@$tickets) ." tickets\n";
+	foreach (@$tickets) {
 		my %ticket = %$_;
 		my $tid = $ticket{'id'};
 		if (defined($tid) && $tid > 0) {
@@ -43,10 +45,10 @@ foreach ('scheduled', 'recording') {
 
 			# fetch metadata
 
-			my %props = getTicketProperties($tid);
-			my $startdate = $props{'Fahrplan.Date'};
-			my $starttime = $props{'Fahrplan.Start'};
-			my $duration = $props{'Fahrplan.Duration'};
+			my $props = $tracker->getTicketProperties($tid);
+			my $startdate = $props->{'Fahrplan.Date'};
+			my $starttime = $props->{'Fahrplan.Start'};
+			my $duration = $props->{'Fahrplan.Duration'};
 
 			# check minimal metadata
 
@@ -69,7 +71,7 @@ foreach ('scheduled', 'recording') {
 			if ((($state eq 'scheduled') and ($now gt $paddedstart)) or
 				(($state eq 'recording') and ($now gt $paddedend))) {
 				print "moving ticket # $tid from state $state to next state ...";
-				setTicketNextState($tid, $state, 'Recording Scheduler: ' .
+				$tracker->setTicketNextState($tid, $state, 'Recording Scheduler: ' .
 					'the current time is over schedule for state $state.');
 				print "\n";
 			}

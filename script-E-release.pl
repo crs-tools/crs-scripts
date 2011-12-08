@@ -1,22 +1,33 @@
 #!/usr/bin/perl -W
 
-require POSIX;
-require trackerlib2;
+require fusevdv;
+require C3TT::Client;
+require boolean;
 
-# Call this script with hostname, secret and project slug as parameter!
+# Call this script with secret and project slug as parameter!
 
-my ($hostname, $secret, $project) = (shift, shift, shift);
+my ($secret, $project) = (shift, shift);
 
-initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
+if (!defined($project)) {
+	# print usage
+	print STDERR "Too few parameters given!\nUsage:\n\n";
+	print STDERR "./script-.... <secret> <project slug>\n\n";
+	exit 1;
+}
 
-my $tid = grabNextTicketForState('releasing');
+my $tracker = C3TT::Client->new('http://tracker.28c3.fem-net.de/rpc', 'C3TT', $secret);
+$tracker->setCurrentProject($project);
+my $ticket = $tracker->assignNextUnassignedForState('releasing');
 
-if (defined($tid) && $tid > 0) {
+if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
+	print "currently no tickets for releasing\n";
+} else {
+	my $tid = $ticket->{id};
 	print "releasing ticket # $tid\n";
 
 	# fetch metadata
 
-	my $count = getTicketProperty($tid, 'Release.Count');
+	my %props = $tracker->getTicketProperties($tid);
 
 	# preparation of new metadata
 
@@ -30,8 +41,9 @@ if (defined($tid) && $tid > 0) {
 
 	# write back to tracker
 
-	setTicketProperty($tid, 'Release.Count', $count);
-	setTicketProperty($tid, 'Release.Datetime', $now);
-	releaseTicketToNextState($tid, 'released successfully');
+	$tracker->setTicketProperty($tid, 'Release.Count', $count);
+	$tracker->setTicketProperty($tid, 'Release.Datetime', $now);
+
+	$tracker->setTicketDone($tid, 'Release Script: released successfully.');
 }
 

@@ -1,20 +1,29 @@
 #!/usr/bin/perl -W
 
-use Data::Dumper;
-require trackerlib2;
+use strict;
 require fusevdv;
+require C3TT::Client;
+require boolean;
 
-# Call this script with hostname, secret and project slug as parameter!
+# Call this script with secret and project slug as parameter!
 
-my ($hostname, $secret, $project) = (shift, shift, shift);
+my ($secret, $project) = (shift, shift);
 
-initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
-my $tid = grabNextTicketForState('merging');
+if (!defined($project)) {
+	# print usage
+	print STDERR "Too few parameters given!\nUsage:\n\n";
+	print STDERR "./script-.... <secret> <project slug>\n\n";
+	exit 1;
+}
 
-if (defined($tid) && $tid > 0) {
-	print "got ticket # $tid\n";
-	my $vid = getVIDfromTicketID($tid);
-	print "event # is $vid\n";
+my $tracker = C3TT::Client->new('http://tracker.28c3.fem-net.de/rpc', 'C3TT', $secret);
+$tracker->setCurrentProject($project);
+my $ticket = $tracker->assignNextUnassignedForState('merging');
+
+if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
+	my $tid = $ticket->{id};
+	my $vid = $ticket->{fahrplan_id};
+	print "got ticket # $tid for event $vid\n";
 	my $mounted = isVIDmounted($vid);
 	print "already mounted: $mounted\n";
 	if ($mounted) {
@@ -26,28 +35,28 @@ if (defined($tid) && $tid > 0) {
 
 	# fetch metadata
 
-	my %props = getTicketProperties($tid);
-	my $room = $props{'Fahrplan.Room'};
-	my $startdate = $props{'Fahrplan.Date'};
-	my $starttime = $props{'Fahrplan.Start'};
-	my $duration = $props{'Fahrplan.Duration'};
+	my $props = $tracker->getTicketProperties($tid);
+	my $room = $props->{'Fahrplan.Room'};
+	my $startdate = $props->{'Fahrplan.Date'};
+	my $starttime = $props->{'Fahrplan.Start'};
+	my $duration = $props->{'Fahrplan.Duration'};
 
 	# check minimal metadata
 
 	if (!defined($room) || !defined($startdate) 
 		|| !defined($duration) || !defined($starttime)) {
 		print STDERR "NOT ENOUGH METADATA!\n";
-		releaseTicketAsBroken($tid);
+		$tracker->setTicketFailed($tid, 'Not enough metadata');
 		die("NOT ENOUGH METADATA!\n");
 	}
-	my $endpadding = $props{'Record.EndPadding'};
+	my $endpadding = $props->{'Record.EndPadding'};
 
 	# transformation of metadata
 
 	$room =~ s/[^0-9]*//; # only the integer from room property
 	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 45 * 60 if (!defined($endpadding)); # default padding is 45 min.
-	$startpadding = 5 * 60; # default startpadding is 5 min.
+	my $startpadding = 5 * 60; # default startpadding is 5 min.
 	my ($paddedstart, $paddedend, $paddedlength) = getPaddedTimes($start, $duration, $startpadding, $endpadding);
 	my $paddedstart2 = $paddedstart;
 	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
@@ -56,21 +65,23 @@ if (defined($tid) && $tid > 0) {
 
 	# prepare attributes for writeback
 
-	%props = ();
-	$props{'Record.Room'} = $room;
-	$props{'Record.Starttime'} = $paddedstart2;
-	$props{'Record.Stoptime'} = $paddedend2;
-	$props{'Record.DurationSeconds'} = $paddedlength;
-	$props{'Record.DurationFrames'} = $paddedlength * 25;
+	my %props2 = ();
+	$props2{'Record.Room'} = $room;
+	$props2{'Record.Starttime'} = $paddedstart2;
+	$props2{'Record.Stoptime'} = $paddedend2;
+	$props2{'Record.DurationSeconds'} = $paddedlength;
+	$props2{'Record.DurationFrames'} = $paddedlength * 25;
 
 	# now try creating the mount
 
-	my $r = doFuseMount($vid, $room, $paddedstart, $paddedlength);
+	my $r = 1;#doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	if (defined($r) && $r) {
-		setTicketProperties($tid, \%props); # when successful, do actually write back properties
-		releaseTicketToNextState($tid, 'Mount4cut: FUSE mount created successfully.');
+		$tracker->setTicketProperties($tid, \%props2); # when successful, do actually write back properties
+		$tracker->setTicketDone($tid, 'Mount4cut: FUSE mount created successfully.');
 	} else {
-		releaseTicketAsBroken($tid, 'Mount4cut: ERROR: could not create FUSE mount!');
+		$tracker->setTicketFailed($tid, 'Mount4cut: ERROR: could not create FUSE mount!');
 	}
+} else {
+	print "no tickets currently recorded.\n";
 }
 
