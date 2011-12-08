@@ -40,6 +40,9 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $startdate = $props->{'Fahrplan.Date'};
 	my $starttime = $props->{'Fahrplan.Start'};
 	my $duration = $props->{'Fahrplan.Duration'};
+	my $replacement = $props->{'Record.SourceReplacement'};
+	my $isRepaired = 0;
+	$isRepaired = 1 if defined($replacement) && $replacement ne '';
 
 	# check minimal metadata
 
@@ -72,13 +75,21 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	$props2{'Record.DurationSeconds'} = $paddedlength;
 	$props2{'Record.DurationFrames'} = $paddedlength * 25;
 
-	# now try creating the mount
+	# now try to create the mount
 
-	my $r = 1;#doFuseMount($vid, $room, $paddedstart, $paddedlength);
+	my $r = 1;
+	if ($isRepaired) {
+		$r = doFuseRepairMount($vid, $room, $replacement);
+	} else {
+		$r = doFuseMount($vid, $room, $paddedstart, $paddedlength);
+	}
+
 	if (defined($r) && $r) {
 		$tracker->setTicketProperties($tid, \%props2); # when successful, do actually write back properties
+		print "FUSE mount created successfully.\n";
 		$tracker->setTicketDone($tid, 'Mount4cut: FUSE mount created successfully.');
 	} else {
+		print "Mount4cut: ERROR: could not create FUSE mount!\n";
 		$tracker->setTicketFailed($tid, 'Mount4cut: ERROR: could not create FUSE mount!');
 	}
 } else {
