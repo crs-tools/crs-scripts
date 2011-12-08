@@ -26,14 +26,19 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $vid = $ticket->{fahrplan_id};
 	print "got ticket # $tid for event $vid\n";
 
-	my $ret = checkCut($vid);
+	my $props = $tracker->getTicketProperties($tid, 'Record.*');
+	my $replacement = $props->{'Record.SourceReplacement'};
+	my $isRepaired = 0;
+	$isRepaired = 1 if defined($replacement) && $replacement ne '';
+
+	my $ret = checkCut($vid) + $isRepaired;
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
 		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE!');
 		die ('CUTTING INCOMPLETE!');
 	}
 	# get necessary metadata from tracker
-	my $starttime = $tracker->getTicketProperty($tid, 'Record.Starttime');
+	my $starttime = $props->{'Record.Starttime');
 
 	# get metadata from fuse mount and store them in tracker
 	my ($in, $out, $intime, $outtime) = getCutmarks($vid, $starttime);
