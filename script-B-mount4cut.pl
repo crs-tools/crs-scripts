@@ -74,6 +74,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	$props2{'Record.Stoptime'} = $paddedend2;
 	$props2{'Record.DurationSeconds'} = $paddedlength;
 	$props2{'Record.DurationFrames'} = $paddedlength * 25;
+	$props2{'Record.EndPadding'} = $endpadding;
 
 	# now try to create the mount
 

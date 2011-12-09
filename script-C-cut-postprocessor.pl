@@ -38,7 +38,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		die ('CUTTING INCOMPLETE!');
 	}
 	# get necessary metadata from tracker
-	my $starttime = $props->{'Record.Starttime');
+	my $starttime = $props->{'Record.Starttime'};
 
 	# get metadata from fuse mount and store them in tracker
 	my ($in, $out, $intime, $outtime) = getCutmarks($vid, $starttime);
