@@ -33,10 +33,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# write metadata back to tracker (?)
 
-	my %props = (
+	my %props2 = (
 		'foo' => 'bar', 
 		'food' => 'obstsalat');
-	$tracker->setTicketProperties($tid, \%props);
+	$tracker->setTicketProperties($tid, \%props2);
 	$tracker->setTicketDone($tid, 'Encoding postprocessor: completed, metadata written.');
 }
 
