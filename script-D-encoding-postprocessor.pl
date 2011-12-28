@@ -29,12 +29,14 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $props = $tracker->getTicketProperties($tid);
 
-	my $srcfile = $props->{'Processing.Path.Output'} . "/" .
-		$props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 
 	if (! -f $srcfile) {
-		$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
-		exit 1;
+		$srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+		if (! -f $srcfile) {
+			$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
+			exit 1;
+		}
 	}
 	my $return = system ("scp -i /root/.ssh/id_rsa $srcfile black_pearl\@chief-mirror.fem-net.de:/mnt/data/release/ ");
 
