@@ -107,7 +107,13 @@ sub isVIDmounted {
 
 sub getSourceFileLengthInSeconds {
 	my $filepath = shift;
-	my $filesize = -s $filepath ; #;{ } <-- fuer den highlighter...
+	my @files = qx ( ls $filepath* );
+	my $filesize = 0;
+	foreach (@files) {
+		my $file = $_;
+		chop $file;
+		$filesize += 0 + -s $file;
+	}
 	return round($filesize / ( $framesize * $fps));
 }
 
@@ -177,11 +183,13 @@ sub doFuseRepairMount {
 	my $vid = shift;
 	my $room = shift;
 	my $replacement = shift;
-	
+
+	print "XXXX $vid $room $replacement \n" if defined($debug);
+
 	return 0 unless defined($replacement);
-	my $replacementpath = $repairdir . '/' . $replacement . '.dv';
-	return 0 unless -f $replacementpath;
-	print "(re)mounting FUSE with repaired file $replacementpath\n" if defined($debug);
+	my $replacementpath = $repairdir . '/' . $replacement ;
+	return 0 unless -f $replacementpath.'aa';
+	print "(re)mounting FUSE with repaired file $replacementpath*\n" if defined($debug);
 	doFuseUnmount($vid) if isVIDmounted($vid);
 	my $length = getSourceFileLengthInSeconds($replacementpath);
 
@@ -192,7 +200,7 @@ sub doFuseRepairMount {
 	print "mounting FUSE: id=$vid source=$replacementpath ".
 		"length=$length\n" if defined($debug);
 	qx ( mkdir -p $basepath/$vid );
-	my $fusecmd = " $binpath/fuse-vdv p=$replacement c=$repairdir st=.dv ot=$length ";
+	my $fusecmd = " $binpath/fuse-vdv p=$replacement c=$repairdir st=aa ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=$intro ";
@@ -204,7 +212,7 @@ sub doFuseRepairMount {
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -oallow_other,use_ino $mountpath/$vid ";
+	$fusecmd .= " -s -oallow_other,use_ino $mountpath/$vid ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
 	return isVIDmounted($vid);
