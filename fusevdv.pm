@@ -4,7 +4,7 @@ my $basepath = '/c3mnt/fuse/';
 my $mountpath = '/c3mnt/fuse/';
 my $binpath = '/usr/bin/';
 my $capdir = '/c3mnt/pieces/';
-my $capprefix = 'feld';
+my $capprefix = 'saal';
 my $capprefix2capdir = 1; # wether or not the capprefix with parameter is appended to the capdir
 my $defaultlength = 7200;  # Laenge des gefusten Videos (vorm Schnitt) in Sekunden, falls kein konkreter Wert bekannt ist
 my $introdir = '/c3mnt/intros/';
@@ -167,7 +167,7 @@ sub doFuseMount {
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -oallow_other,use_ino $mountpath/$vid ";
+	$fusecmd .= " -s -oallow_other,use_ino $mountpath/$vid ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
 	return isVIDmounted($vid);

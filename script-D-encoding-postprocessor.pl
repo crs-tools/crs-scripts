@@ -27,17 +27,26 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# fetch metadata
 
-	my %props = $tracker->getTicketProperties($tid);
+	my $props = $tracker->getTicketProperties($tid);
 
-		# TODO create torrent file, create checksums, backup (?, c3ftp?)
+	my $srcfile = $props->{'Processing.Path.Output'} . "/" .
+		$props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+
+	if (! -f $srcfile) {
+		$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
+		exit 1;
+	}
+	my $return = system ("scp -i /root/.ssh/id_rsa $srcfile black_pearl\@chief-mirror.fem-net.de:/mnt/data/release/ ");
+
+	print "$srcfile \n$return\n";
 
 	# write metadata back to tracker (?)
 
-	my %props2 = (
-		'foo' => 'bar', 
-		'food' => 'obstsalat');
-	$tracker->setTicketProperties($tid, \%props2);
-	$tracker->setTicketDone($tid, 'Encoding postprocessor: completed, metadata written.');
+	if ($return eq '0') {
+		$tracker->setTicketDone($tid, 'Encoding postprocessor: copy to C3FTP completed.');
+	} else {
+		$tracker->setTicketFailed($tid, 'Encoding postprocessor: scp failed');
+	}
 }
 
 
