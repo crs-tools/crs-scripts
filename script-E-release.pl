@@ -1,8 +1,9 @@
 #!/usr/bin/perl -W
 
-require fusevdv;
+#require fusevdv;
 require C3TT::Client;
 require boolean;
+use Data::Dumper;
 
 # Call this script with secret and project slug as parameter!
 
@@ -15,7 +16,7 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.28c3.fem-net.de/rpc', 'C3TT', $secret);
+my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
 $tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('releasing');
 
@@ -24,12 +25,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 } else {
 	my $tid = $ticket->{id};
 	print "releasing ticket # $tid\n";
+	#print Dumper($ticket);
 
 	# fetch metadata
 
-	my %props = $tracker->getTicketProperties($tid);
+	my $props = $tracker->getTicketProperties($tid);
 
 	# preparation of new metadata
+	
+	my $path = $tracker->getEncodingProfiles($ticket->{'encoding_profile_id'})->{'mirror_folder'};
+	my $srcfile = $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 
 	my $now = POSIX::strftime('%Y.%m.%d_%H:%M:%S', localtime());
 	$count = 0 unless defined($count) and $count =~ /^\d+$/;
@@ -38,12 +43,24 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	# releasing file
 
 		# TODO upload essence file
+		print '/bin/bash /home/ecki/tracker2.0/release2.sh ' . $srcfile . ' ' . $path;
+		$rc=system('/bin/bash /home/ecki/tracker2.0/release.sh ' . $srcfile . ' ' . $path);
 
 	# write back to tracker
+	
+	if($rc==0)
+	{
+		$tracker->setTicketProperty($tid, 'Release.Count', $count);
+		$tracker->setTicketProperty($tid, 'Release.Datetime', $now);
 
-	$tracker->setTicketProperty($tid, 'Release.Count', $count);
-	$tracker->setTicketProperty($tid, 'Release.Datetime', $now);
+		$tracker->setTicketDone($tid, 'Release Script: released successfully.');
+	}
+	else
+	{
+		$tracker->setTicketProperty($tid, 'Release.Count', $count);
+		$tracker->setTicketProperty($tid, 'Release.Datetime', $now);
 
-	$tracker->setTicketDone($tid, 'Release Script: released successfully.');
+		$tracker->setTicketFailed($tid, 'Release Script failed');
+	}
 }
 

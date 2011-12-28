@@ -1,11 +1,15 @@
 #!/bin/bash
 
-mv /mnt/data/release/"$1" /mnt/data/release/torrent/.
+echo "$1"
+echo "$2"
+
+cp /mnt/data/release/"$1" /mnt/data/release/torrent/.
 cd /mnt/data/release/torrent/
 sha1sum -b "$1" >> "$1".sha1
 
 mktorrent -a http://v6.torrent.speedpartner.de:6969/announce -a http://v4.torrent.speedpartner.de:6969/announce -a http://tracker.publicbt.com:80/announce,udp://tracker.publicbt.com:80/announce -a http://tracker.openbittorrent.com:80/announce,udp://tracker.openbittorrent.com:80/announce -a http://tracker.birkenwald.de:6969/announce -a http://tracker.torrent.to:2710/announce -a http://exodus.1337x.org/announce -w http://mirror.fem-net.de/CCC/28C3/"$2"/"$1" -l 19 "$1" -o "$1".torrent
 
+mkdir -p /mnt/data/mirror/28C3/"$2"
 ln /mnt/data/release/torrent/"$1".sha1 /mnt/data/mirror/28C3/"$2"/"$1".sha1
 ln /mnt/data/release/torrent/"$1".torrent /mnt/data/mirror/28C3/"$2"/"$1".torrent
 echo "# $1" >> /mnt/data/release/tracker/28c3.txt
@@ -21,7 +25,7 @@ mv "$1".sha1    /srv/ftp/congress/2011/"$2"/;
 EOF
 echo "$1" >> /mnt/data/release/torrent.txt
 
-sleep 6h
+sleep 2h
 mkdir -p /mnt/data/mirror/28C3/"$2"
 ln /mnt/data/release/torrent/"$1" /mnt/data/mirror/28C3/"$2"/"$1"
 
