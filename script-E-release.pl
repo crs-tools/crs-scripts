@@ -35,6 +35,18 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	
 	my $path = $tracker->getEncodingProfiles($ticket->{'encoding_profile_id'})->{'mirror_folder'};
 	my $srcfile = $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+	my $testfile = "/mnt/data/release/". $srcfile;
+
+	if (! -f $testfile) {
+		$srcfile = $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+		my $testfile = "/mnt/data/release/". $srcfile;
+
+		if (! -f $testfile) {
+			$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
+			print $srcfile ."  ". $path;
+			exit 1;
+		}
+	}
 
 	my $now = POSIX::strftime('%Y.%m.%d_%H:%M:%S', localtime());
 	$count = 0 unless defined($count) and $count =~ /^\d+$/;
@@ -43,8 +55,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	# releasing file
 
 		# TODO upload essence file
-		print '/bin/bash /home/ecki/tracker2.0/release2.sh ' . $srcfile . ' ' . $path;
-		$rc=system('/bin/bash /home/ecki/tracker2.0/release.sh ' . $srcfile . ' ' . $path);
+		#print '/bin/bash /home/ecki/tracker/release2.sh ' . $srcfile . ' ' . $path;
+		$rc=system('/bin/bash /home/ecki/tracker/release.sh ' . $srcfile . ' ' . $path);
 
 	# write back to tracker
 	

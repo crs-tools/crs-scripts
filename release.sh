@@ -17,15 +17,18 @@ transmission-show "$1".torrent | awk '/Hash/ {print $2}' >> /mnt/data/release/tr
 lftp -f /dev/stdin <<EOF
 set cmd:fail-exit true;
 open sftp://upload;
+mkdir -p 2011/"$2";
+cd 2011/"$2";
 put "$1".torrent;
 put "$1".sha1;
-mkdir -p        /srv/ftp/congress/2011/"$2";
-mv "$1".torrent /srv/ftp/congress/2011/"$2"/;
-mv "$1".sha1    /srv/ftp/congress/2011/"$2"/;
 EOF
+#mkdir -p        /srv/ftp/congress/2011/"$2";
+#mv "$1".torrent /srv/ftp/congress/2011/"$2"/;
+#mv "$1".sha1    /srv/ftp/congress/2011/"$2"/;
+#EOF
 echo "$1" >> /mnt/data/release/torrent.txt
 
-sleep 2h
+sleep 4h
 mkdir -p /mnt/data/mirror/28C3/"$2"
 ln /mnt/data/release/torrent/"$1" /mnt/data/mirror/28C3/"$2"/"$1"
 
@@ -33,10 +36,13 @@ sleep 15m
 lftp -f /dev/stdin <<EOF
 set cmd:fail-exit true;
 open sftp://upload;
+mkdir -p 2011/"$2";
+cd 2011/"$2";
 put "$1";
-mkdir -p /srv/ftp/congress/2011/"$2";
-mv "$1"  /srv/ftp/congress/2011/"$2"/;
 EOF
+#mkdir -p /srv/ftp/congress/2011/"$2";
+#mv "$1"  /srv/ftp/congress/2011/"$2"/;
+#EOF
 
 #sftp -P 2222 -i /home/ecki/sshkey_ecki_ftp.ccc.de fem@212.201.68.160
 #/srv/ftp/congress/2011
