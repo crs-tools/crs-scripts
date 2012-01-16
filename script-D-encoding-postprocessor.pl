@@ -15,7 +15,7 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.28c3.fem-net.de/rpc', 'C3TT', $secret);
+my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
 $tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('postprocessing');
 
