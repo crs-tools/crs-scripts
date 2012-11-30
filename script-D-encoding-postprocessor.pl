@@ -1,6 +1,6 @@
 #!/usr/bin/perl -W
 
-require fusevdv;
+#require fusevdv;
 require C3TT::Client;
 require boolean;
 
