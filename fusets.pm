@@ -144,7 +144,7 @@ sub checkCut {
 sub doFuseUnmount {
 	my $vid = shift;
 	return unless defined ($vid);
-	qx ( /usr/bin/fusermount -u $basepath/$vid );
+	qx ( /usr/bin/fusermount -u $basepath/$vid -z );
 }
 
 sub doFuseMount {
