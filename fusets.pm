@@ -4,12 +4,13 @@ my $basepath = '/opt/crs/fuse/';
 my $mountpath = '/opt/crs/fuse/';
 my $binpath = '/usr/bin/';
 my $capdir = '/opt/crs/storage/pieces/';
-my $capprefix = 'saal';
-my $capprefix2capdir = 1; # wether or not the capprefix with parameter is appended to the capdir
+#my $capprefix = 'saal';
+my $capprefix = 'iwut2012_feld';
+my $capprefix2capdir = 0; # wether or not the capprefix with parameter is appended to the capdir
 my $repairdir = '/opt/crs/storage/repaired';
 my $fps = 25;
 my $defaultfiles = 20;  # Anzahl der Schnipsel, wenn keine Anzahl gegeben wird (Standard bei 6min-Schnipsel == 2h)
-my $defaultpieceframes = 6*60*$fps;  # Laenge eines Schnispels in Frames (Standard: 6 min.)
+my $defaultpieceframes = 3*60*$fps;  # Laenge eines Schnispels in Frames (Standard: 6 min.)
 
 my $debug = undef;
 
@@ -130,9 +131,11 @@ sub checkCut {
 	my $p = getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($debug);
 	my $t = qx ( cat $p/inframe );
+	chop $t;
 	return 0 unless defined($t) && ($t > 0);
 	print "checking mark OUT of event $vid\n" if defined($debug);
 	$t = qx ( cat $p/outframe );
+	chop $t;
 	return 0 unless defined($t) && ($t > 0);
 	print "checking virtual files of event $vid\n" if defined($debug);
 	$t = "$p/uncut.ts";
@@ -157,9 +160,10 @@ sub doFuseMount {
 	doFuseUnmount($vid) if isVIDmounted($vid);
 	my $files;
 	if (defined($length)) {
-		$files = ($length / $defaultpieceframes) + 1;
+		$files = int($length * $fps / $defaultpieceframes) + 1;
 	} else {
 		$files = $defaultfiles;
+		$length = $files * $defaultpieceframes / $fps;
 	}
 	my $frames = $length * $fps;
 

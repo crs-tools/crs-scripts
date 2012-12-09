@@ -58,8 +58,8 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	$room =~ s/[^0-9]*//; # only the integer from room property
 	my $start = $startdate . '-' . $starttime; # put date and time together
-	$endpadding = 45 * 60 if (!defined($endpadding)); # default padding is 45 min.
-	my $startpadding = 15 * 60; # default startpadding is 15 min.
+	$endpadding = 15 * 60 if (!defined($endpadding)); # default padding is 15 min.
+	my $startpadding = 5 * 60; # default startpadding is 5 min.
 	my ($paddedstart, $paddedend, $paddedlength) = getPaddedTimes($start, $duration, $startpadding, $endpadding);
 	my $paddedstart2 = $paddedstart;
 	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
@@ -82,6 +82,11 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	if ($isRepaired) {
 		$r = doFuseRepairMount($vid, $room, $replacement);
 	} else {
+		$room = '';
+		if ($paddedstart =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) { # different syntax for TS-Capture
+			$paddedstart = "$1-$2-$3_$4-$5-$6";
+		}
+
 		$r = doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
 
