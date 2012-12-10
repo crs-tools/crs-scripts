@@ -72,7 +72,7 @@ foreach ('scheduled', 'recording') {
 				(($state eq 'recording') and ($now gt $paddedend))) {
 				print "moving ticket # $tid from state $state to next state ...";
 				$tracker->setTicketNextState($tid, $state, 'Recording Scheduler: ' .
-					'the current time is over schedule for state $state.');
+					"the current time is over schedule for state $state.");
 				print "\n";
 			}
 		}
