@@ -1,6 +1,6 @@
 #!/usr/bin/perl -W
 
-#require fusevdv;
+require fusevdv;
 require C3TT::Client;
 require boolean;
 
@@ -29,10 +29,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $props = $tracker->getTicketProperties($tid);
 
-	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 
 	if (! -f $srcfile) {
-		$srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+		$srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 		if (! -f $srcfile) {
 			$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
 			exit 1;
@@ -45,11 +45,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# write metadata back to tracker (?)
 
-	if ($return eq '0') {
-		$tracker->setTicketDone($tid, 'Encoding postprocessor: copy to C3FTP completed.');
-	} else {
-		$tracker->setTicketFailed($tid, 'Encoding postprocessor: scp failed');
-	}
+	$tracker->setTicketDone($tid, 'Encoding postprocessor: file check completed.');
 }
 
 
