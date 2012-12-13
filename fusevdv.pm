@@ -2,13 +2,15 @@
 
 my $basepath = '/c3mnt/fuse/';
 my $mountpath = '/c3mnt/fuse/';
-my $binpath = '/usr/bin/';
+my $binpath = '/usr/bin';
 my $capdir = '/c3mnt/pieces/';
-my $capprefix = 'saal';
+#my $capprefix = 'saal';
+my $capprefix = 'feld';
 my $capprefix2capdir = 1; # wether or not the capprefix with parameter is appended to the capdir
 my $defaultlength = 7200;  # Laenge des gefusten Videos (vorm Schnitt) in Sekunden, falls kein konkreter Wert bekannt ist
 my $introdir = '/c3mnt/intros/';
-my $outrofile = '/c3mnt/outro/outro.dv';
+#my $outrofile = '/c3mnt/outro/outro.dv';
+my $outrofile = '';
 my $repairdir = '/c3mnt/repaired';
 my $framesize = 144000;
 my $fps = 25;
@@ -138,7 +140,7 @@ sub checkCut {
 sub doFuseUnmount {
 	my $vid = shift;
 	return unless defined ($vid);
-	qx ( /usr/bin/fusermount -u $basepath/$vid );
+	qx ( /usr/bin/fusermount -u $basepath/$vid -z );
 }
 
 sub doFuseMount {
