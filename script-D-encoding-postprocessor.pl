@@ -15,7 +15,7 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
+my $tracker = C3TT::Client->new('http://tracker.29c3.fem-net.de/rpc', 'C3TT', $secret);
 $tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('postprocessing');
 
@@ -28,9 +28,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	# fetch metadata
 
 	my $props = $tracker->getTicketProperties($tid);
-
-	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
-
+	my $basename = $props->{'EncodingProfile.Basename'};
+	my $slug = '';
+	if ($basename =~ /_([^_]+$)/) {
+		$slug = $1;
+	}
+	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Fahrplan.ID'} . "-" . $slug . "." . $props->{'EncodingProfile.Extension'};
 	if (! -f $srcfile) {
 		$srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 		if (! -f $srcfile) {
@@ -38,17 +41,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			exit 1;
 		}
 	}
-	#my $return = system ("scp -i /root/.ssh/id_rsa $srcfile black_pearl\@chief-mirror.fem-net.de:/mnt/data/release/ ");
-	my $return = 0;
+	my $return = system ("scp -i /root/.ssh/id_rsa $srcfile ecki\@chief-mirror.fem-net.de:~/release/ ");
 
 	print "$srcfile \n$return\n";
 
 	# write metadata back to tracker (?)
 
 	if ($return eq '0') {
-		$tracker->setTicketDone($tid, 'Encoding postprocessor: copy to C3FTP completed.');
+		$tracker->setTicketDone($tid, 'Encoding postprocessor: copy to chief-mirror completed.');
 	} else {
-		$tracker->setTicketFailed($tid, 'Encoding postprocessor: scp failed');
+		$tracker->setTicketFailed($tid, 'Encoding postprocessor: scp to chief-mirror failed');
 	}
 }
 
