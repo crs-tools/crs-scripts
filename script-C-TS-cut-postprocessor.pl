@@ -42,12 +42,14 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# get metadata from fuse mount and store them in tracker
 	my ($in, $out, $intime, $outtime, $inseconds, $outseconds) = getCutmarks($vid, $starttime);
+	my $diffseconds = $outseconds - $inseconds;
 	my %props = (
 		'Record.Cutin' => $in, 
 		'Record.Cutout' => $out,
 		'Record.Cutintime' => $intime,
 		'Record.Cutouttime' => $outtime,
 		'Record.Cutinseconds' => $inseconds,
+		'Record.Cutdiffseconds' => $diffseconds,
 		'Record.Cutoutseconds' => $outseconds);
 	$tracker->setTicketProperties($tid, \%props);
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
