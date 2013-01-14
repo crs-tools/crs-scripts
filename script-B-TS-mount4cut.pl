@@ -16,13 +16,15 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
+my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'record');
 $tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('merging');
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $tid = $ticket->{id};
 	my $vid = $ticket->{fahrplan_id};
+	my $props = $tracker->getTicketProperties($tid);
+	$vid = $props->{'Fahrplan.ID'} if ($vid < 1);
 	print "got ticket # $tid for event $vid\n";
 	my $mounted = isVIDmounted($vid);
 	print "already mounted: $mounted\n";
@@ -35,7 +37,6 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	# fetch metadata
 
-	my $props = $tracker->getTicketProperties($tid);
 	my $room = $props->{'Fahrplan.Room'};
 	my $startdate = $props->{'Fahrplan.Date'};
 	my $starttime = $props->{'Fahrplan.Start'};
@@ -52,14 +53,14 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 		$tracker->setTicketFailed($tid, 'Not enough metadata');
 		die("NOT ENOUGH METADATA!\n");
 	}
+	my $startpadding = $props->{'Record.StartPadding'};
 	my $endpadding = $props->{'Record.EndPadding'};
 
 	# transformation of metadata
-
 	$room =~ s/[^0-9]*//; # only the integer from room property
 	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 15 * 60 if (!defined($endpadding)); # default padding is 15 min.
-	my $startpadding = 5 * 60; # default startpadding is 5 min.
+	$startpadding = 5 * 60 unless defined($startpadding); # default startpadding is 5 min.
 	my ($paddedstart, $paddedend, $paddedlength) = getPaddedTimes($start, $duration, $startpadding, $endpadding);
 	my $paddedstart2 = $paddedstart;
 	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
@@ -79,14 +80,13 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	# now try to create the mount
 
 	my $r = 1;
-	if ($isRepaired) {
-		$r = doFuseRepairMount($vid, $room, $replacement);
+	if ($isRepaired == 1) {
+		print "Creating repair mount...\n";
+		$r = doFuseRepairMount($vid, $replacement);
 	} else {
-		$room = '';
 		if ($paddedstart =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) { # different syntax for TS-Capture
 			$paddedstart = "$1-$2-$3_$4-$5-$6";
 		}
-
 		$r = doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
 
