@@ -12,11 +12,11 @@ C3TT::Client - Client for interacting with the C3 Ticket Tracker via XML-RPC
 
 =head1 VERSION
 
-Version 0.2
+Version 0.3
 
 =cut
 
-our $VERSION   = '0.2';
+our $VERSION   = '0.3';
 
 =head1 SYNOPSIS
 
@@ -66,10 +66,18 @@ sub new {
     $self->{url} = shift;
     $self->{prefix} = shift;
     my $secret = shift;
+    my $suffix = shift;
+    $suffix='' unless defined($suffix);
+    my $host = hostfqdn;
+    if ($host =~ /^([^\.]+)\.(.+)$/) {
+        $host = "$1-$suffix.$2";
+    } else {
+        $host .= "-$suffix";
+    }
+    $self->{fqdn} = $host;
+    $self->{uid} = md5_hex($host . $secret);
 
-	$self->{uid} = md5_hex(hostfqdn . "$secret");
-
-    $self->{remote} = XML::RPC::Fast->new($self->{url}.'/'.$self->{uid}.'/'.hostfqdn);
+    $self->{remote} = XML::RPC::Fast->new($self->{url}.'/'.$self->{uid}.'/'.$host);
 
     bless $self;
 
@@ -80,7 +88,7 @@ sub setCurrentProject {
 	my $self = shift;
 	$self->{project_slug} = shift;
 
-	$self->{remote} = XML::RPC::Fast->new($self->{url}.'/'.$self->{uid}.'/'.hostfqdn.'/'.$self->{project_slug});
+	$self->{remote} = XML::RPC::Fast->new($self->{url}.'/'.$self->{uid}.'/'.$self->{fqdn}.'/'.$self->{project_slug});
 
 	bless $self;
 }
