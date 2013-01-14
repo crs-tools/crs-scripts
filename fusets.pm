@@ -3,14 +3,14 @@
 my $basepath = '/opt/crs/fuse/';
 my $mountpath = '/opt/crs/fuse/';
 my $binpath = '/usr/bin/';
-my $capdir = '/opt/crs/storage/pieces/';
-#my $capprefix = 'saal';
-my $capprefix = 'iwut2012_feld';
-my $capprefix2capdir = 0; # wether or not the capprefix with parameter is appended to the capdir
-my $repairdir = '/opt/crs/storage/repaired';
+my $capdir = '/opt/crs/pieces/';
+my $capprefix = 'saal';
+#my $capprefix = 'iwut2012_feld';
+my $capprefix2capdir = 1; # wether or not the capprefix with parameter is appended to the capdir
+my $repairdir = '/opt/crs/repair';
 my $fps = 25;
 my $defaultfiles = 20;  # Anzahl der Schnipsel, wenn keine Anzahl gegeben wird (Standard bei 6min-Schnipsel == 2h)
-my $defaultpieceframes = 3*60*$fps;  # Laenge eines Schnispels in Frames (Standard: 6 min.)
+my $defaultpieceframes = 3*60*$fps;  # Laenge eines Schnispels in Frames (Standard: 3 min.)
 
 my $debug = undef;
 
@@ -183,27 +183,18 @@ sub doFuseMount {
 
 sub doFuseRepairMount {
 	my $vid = shift;
-	my $room = shift;
 	my $replacement = shift;
 
-	print "XXXX $vid $room $replacement \n" if defined($debug);
+	print "XXXX $vid $replacement \n" if defined($debug);
 
 	return 0 unless defined($replacement);
 	my $replacementpath = $repairdir . '/' . $replacement ;
-	return 0 unless -f $replacementpath.'aa';
-	print "(re)mounting FUSE with repaired file $replacementpath*\n" if defined($debug);
+	return 0 unless -f $replacementpath;
+	print "replacing FUSE with repaired file $replacementpath*\n" if defined($debug);
 	doFuseUnmount($vid) if isVIDmounted($vid);
-	my ($files,$length) = getSourceFileLengthInSeconds($replacementpath);
-	my $frames = $length * $fps;
-
-	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
-	print "mounting FUSE: id=$vid source=$replacementpath \n" if defined($debug);
 	qx ( mkdir -p $basepath/$vid );
-	my $fusecmd = " $binpath/fuse-ts p=$replacement c=$repairdir st=aa numfiles=$files totalframes=$frames ";
-	$fusecmd .= " -s -oallow_other,use_ino $mountpath/$vid ";
-	print "FUSE cmd: $fusecmd\n";
-	qx ( $fusecmd );
-	return isVIDmounted($vid);
+	qx ( ln -s "$replacementpath" "$mountpath/$vid/uncut.ts" );
+	return 1;
 }
 
 sub getCutmarks {
