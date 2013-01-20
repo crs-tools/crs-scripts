@@ -1,50 +1,47 @@
 #!/bin/bash
 
+#$1 Dateiname
+#$2 Orndername/Profilname
 echo "$1"
 echo "$2"
 
-cp /mnt/data/release/"$1" /mnt/data/release/torrent/.
-cd /mnt/data/release/torrent/
+#variablen definieren
+#zwspeicher="/mnt/raid/release"
+#mirror="/mnt/raid/mirror"
+#xxc3="29C3"
+xxc3=$3
+zwspeicher=$4
+mirror=$5
+torrenttime=$6
+
+#zum zwischenspeicherverzeichnis wechseln
+cd $zwspeicher
+
+#sha1 summe zur datei erstellen
 sha1sum -b "$1" >> "$1".sha1
 
-mktorrent -a http://v6.torrent.speedpartner.de:6969/announce -a http://v4.torrent.speedpartner.de:6969/announce -a http://tracker.publicbt.com:80/announce,udp://tracker.publicbt.com:80/announce -a http://tracker.openbittorrent.com:80/announce,udp://tracker.openbittorrent.com:80/announce -a http://tracker.birkenwald.de:6969/announce -a http://tracker.torrent.to:2710/announce -a http://exodus.1337x.org/announce -w http://mirror.fem-net.de/CCC/28C3/"$2"/"$1" -l 19 "$1" -o "$1".torrent
+#torrent zur datei erstellen mit mehreren trackern und webseed
+mktorrent -a http://v6.torrent.speedpartner.de:6969/announce -a http://v4.torrent.speedpartner.de:6969/announce -a http://tracker.ccc.de:80/announce,udp://tracker.ccc.de:80/announce -a http://tracker.publicbt.com:80/announce,udp://tracker.publicbt.com:80/announce -a http://tracker.openbittorrent.com:80/announce,udp://tracker.openbittorrent.com:80/announce -a http://tracker.birkenwald.de:6969/announce -a http://tracker.istole.it:80/announce,udp://tracker.istole.it:80/announce -w http://mirror.fem-net.de/CCC/"$xxc3"/"$2"/"$1" -l 19 "$1" -o "$1".torrent
 
-mkdir -p /mnt/data/mirror/28C3/"$2"
-ln /mnt/data/release/torrent/"$1".sha1 /mnt/data/mirror/28C3/"$2"/"$1".sha1
-ln /mnt/data/release/torrent/"$1".torrent /mnt/data/mirror/28C3/"$2"/"$1".torrent
-echo "# $1" >> /mnt/data/release/tracker/28c3.txt
-transmission-show "$1".torrent | awk '/Hash/ {print $2}' >> /mnt/data/release/tracker/28c3.txt
-lftp -f /dev/stdin <<EOF
-set cmd:fail-exit true;
-open sftp://upload;
-mkdir -p 2011/"$2";
-cd 2011/"$2";
-put "$1".torrent;
-put "$1".sha1;
-EOF
-#mkdir -p        /srv/ftp/congress/2011/"$2";
-#mv "$1".torrent /srv/ftp/congress/2011/"$2"/;
-#mv "$1".sha1    /srv/ftp/congress/2011/"$2"/;
-#EOF
-echo "$1" >> /mnt/data/release/torrent.txt
+#dateinamen und hashwert des torrents in die passende datei schreiben
+echo "# $1" >> "$zwspeicher"/tracker/"$xxc3".txt
+transmission-show "$1".torrent | awk '/Hash/ {print $2}' >> "$zwspeicher"/tracker/"$xxc3".txt
 
-sleep 4h
-mkdir -p /mnt/data/mirror/28C3/"$2"
-ln /mnt/data/release/torrent/"$1" /mnt/data/mirror/28C3/"$2"/"$1"
+#endgültiges spiegelverzeichnis erstellen
+mkdir -p "$mirror"/"$xxc3"/"$2"
 
-sleep 15m
-lftp -f /dev/stdin <<EOF
-set cmd:fail-exit true;
-open sftp://upload;
-mkdir -p 2011/"$2";
-cd 2011/"$2";
-put "$1";
-EOF
-#mkdir -p /srv/ftp/congress/2011/"$2";
-#mv "$1"  /srv/ftp/congress/2011/"$2"/;
-#EOF
+#sha1 torrent vom zwischenspeicher zum spiegelverzeichnis verschieben
+mv "$zwspeicher"/"$1".sha1 "$mirror"/"$xxc3"/"$2"/
+mv "$zwspeicher"/"$1".torrent "$mirror"/"$xxc3"/"$2"/
 
-#sftp -P 2222 -i /home/ecki/sshkey_ecki_ftp.ccc.de fem@212.201.68.160
-#/srv/ftp/congress/2011
+#status des torrents auf fertig setzen
+echo "$1" >> "$zwspeicher"/torrent.txt
 
-echo "$1" >> /mnt/data/release/released.txt
+
+#warten auf torrenttime und datei verschieben
+sleep $torrenttime;
+mv "$zwspeicher"/"$1" "$mirror"/"$xxc3"/"$2"/
+
+#status der datei auf fertig setzen
+echo "$1" >> "$zwspeicher"/released.txt
+
