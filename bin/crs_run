@@ -1,0 +1,75 @@
+#!/bin/bash
+
+if [ -z "${CRS_SECRET}" ]; then
+    echo "CRS_SECRET not set. aborting.";
+    exit 1;
+fi
+
+if [ -z "${CRS_SLUG}" ]; then
+    echo "CRS_SLUG not set. aborting.";
+    exit 1;
+fi
+
+SCRIPT_NAME=$1
+if [ -z "${SCRIPT_NAME}" ]; then 
+    echo "no script given."
+    echo "usage: `basename $0` <script> [<sleeptime>]"
+    exit 1
+fi
+
+SLEEP_TIME=$2
+if [ -z "${SLEEP_TIME}" ]; then 
+    SLEEP_TIME=30
+fi
+
+# only run once per host
+mkdir -p /tmp/crs
+PIDFILE=/tmp/crs/${SCRIPT_NAME}.pid
+if test -f "$PIDFILE"; then
+    PID="$(cat "$PIDFILE")"
+    if ps -p $PID | grep --quiet 'crs_run'; then
+        echo "An instance of '${SCRIPT_NAME}' is already running!" >&2
+        # TODO: support for "kill and restart"
+        exit 1
+    fi
+fi
+echo $$ > "$PIDFILE"
+PID=`cat "$PIDFILE"`
+
+# get path
+SCRIPT_PATH=$(readlink $0)
+if [ $? -eq 0 ]; then
+    SCRIPT_PATH=$(dirname ${SCRIPT_PATH})
+else
+    SCRIPT_PATH=$(dirname $0)
+fi
+SCRIPT_PATH=$(dirname ${SCRIPT_PATH})
+
+# set perl include path
+export PERL5LIB=${SCRIPT_PATH}/lib
+
+# assemble script command
+SCRIPT=${SCRIPT_PATH}/scripts/${SCRIPT_NAME}
+
+if [ ! -f "${SCRIPT}" ]; then
+    echo "selected script (${SCRIPT}) does not exist";
+fi
+
+# make sure to remove pid file on exit
+trap "{ rm -f $PIDFILE ; }" EXIT
+
+
+echo "-------------------------------------------"
+echo "       CRS Runner v1.0 by FeM 2013"
+echo "-------------------------------------------"
+echo "    Script:  ${SCRIPT_NAME}"
+echo "Sleep time:  ${SLEEP_TIME}s"
+echo "Started on:  $(date +%c)"
+echo "-------------------------------------------"
+
+while true; do
+    echo "------- executing ($(date +%X)) ---------"
+    "${SCRIPT}"
+    echo "------- waiting ${SLEEP_TIME}s ($(date +%X)) ---------"
+    sleep ${SLEEP_TIME}
+done
