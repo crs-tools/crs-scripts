@@ -1,13 +1,13 @@
 #!/usr/bin/perl -W
 
 use strict;
-require fusets;
+require CRS::Fuse::TS;
 require C3TT::Client;
 require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = (shift, shift);
+my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
 
 if (!defined($project)) {
 	# print usage
@@ -16,7 +16,7 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'record');
+my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'mount');
 $tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('merging');
 
@@ -26,11 +26,14 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $props = $tracker->getTicketProperties($tid);
 	$vid = $props->{'Fahrplan.ID'} if ($vid < 1);
 	print "got ticket # $tid for event $vid\n";
-	my $mounted = isVIDmounted($vid);
+	
+	my $fuse = CRS::Fuse::TS->new($props);
+	
+	my $mounted = $fuse->isVIDmounted($vid);
 	print "already mounted: $mounted\n";
 	if ($mounted) {
 		print " already mounted! unmounting... ";
-		doFuseUnmount($vid);
+		$fuse->doFuseUnmount($vid);
 		print "done\n";
 	}
 	print "creating fuse mount for event # $vid\n";
@@ -59,9 +62,9 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	# transformation of metadata
 	$room =~ s/[^0-9]*//; # only the integer from room property
 	my $start = $startdate . '-' . $starttime; # put date and time together
-	$endpadding = 15 * 60 if (!defined($endpadding)); # default padding is 15 min.
-	$startpadding = 5 * 60 unless defined($startpadding); # default startpadding is 5 min.
-	my ($paddedstart, $paddedend, $paddedlength) = getPaddedTimes($start, $duration, $startpadding, $endpadding);
+	$endpadding = 5 * 60 if (!defined($endpadding)); # default padding is 15 min.
+	$startpadding = 2 * 60 unless defined($startpadding); # default startpadding is 5 min.
+	my ($paddedstart, $paddedend, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
 	my $paddedstart2 = $paddedstart;
 	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
 	my $paddedend2 = $paddedend;
@@ -82,12 +85,12 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $r = 1;
 	if ($isRepaired == 1) {
 		print "Creating repair mount...\n";
-		$r = doFuseRepairMount($vid, $replacement);
+		$r = $fuse->doFuseRepairMount($vid, $replacement);
 	} else {
 		if ($paddedstart =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) { # different syntax for TS-Capture
 			$paddedstart = "$1-$2-$3_$4-$5-$6";
 		}
-		$r = doFuseMount($vid, $room, $paddedstart, $paddedlength);
+		$r = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
 
 	if (defined($r) && $r) {

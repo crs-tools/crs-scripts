@@ -6,7 +6,7 @@ require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = (shift, shift);
+my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
 
 if (!defined($project)) {
 	# print usage

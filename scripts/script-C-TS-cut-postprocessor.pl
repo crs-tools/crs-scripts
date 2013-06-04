@@ -1,12 +1,12 @@
 #!/usr/bin/perl -W
 
-require fusets;
+require CRS::Fuse::TS;
 require C3TT::Client;
 require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = (shift, shift);
+my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
 
 if (!defined($project)) {
 	# print usage
@@ -31,7 +31,9 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $isRepaired = 0;
 	$isRepaired = 1 if defined($replacement) && $replacement ne '';
 
-	my $ret = checkCut($vid) + $isRepaired;
+	my $fuse = CRS::Fuse::TS->new($props);
+
+	my $ret = $fuse->checkCut($vid) + $isRepaired;
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
 		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE!');
@@ -41,7 +43,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $starttime = $props->{'Record.Starttime'};
 
 	# get metadata from fuse mount and store them in tracker
-	my ($in, $out, $intime, $outtime, $inseconds, $outseconds) = getCutmarks($vid, $starttime);
+	my ($in, $out, $intime, $outtime, $inseconds, $outseconds) = $fuse->getCutmarks($vid, $starttime);
 	my $diffseconds = $outseconds - $inseconds;
 	my %props = (
 		'Record.Cutin' => $in, 

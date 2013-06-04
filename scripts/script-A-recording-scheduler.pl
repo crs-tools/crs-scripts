@@ -1,12 +1,12 @@
 #!/usr/bin/perl -W
 
 require POSIX;
-require fusevdv;
+require CRS::Fuse::TS;
 require C3TT::Client;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = (shift, shift);
+my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
 
 if (!defined($project)) {
 	# print usage
@@ -23,9 +23,8 @@ my $endpadding = 300;
 
 $|=1;
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
+my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'record');
 $tracker->setCurrentProject($project);
-#initTracker('hostname' => $hostname, 'secret' => $secret, 'project' => $project);
 
 foreach ('scheduled', 'recording') {
 	my $state = $_;
@@ -57,11 +56,12 @@ foreach ('scheduled', 'recording') {
 				next;
 			}
 
+
 			# transformation of metadata
 
 			print ".";
 			my $start = $startdate . '-' . $starttime; # put date and time together
-			my ($paddedstart, $paddedend, undef) = getPaddedTimes($start, $duration, $startpadding, $endpadding);
+			my ($paddedstart, $paddedend, undef) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
 			my $now = POSIX::strftime('%Y.%m.%d-%H_%M_%S', localtime());
 
 			print ".\n";
