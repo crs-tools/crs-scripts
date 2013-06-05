@@ -1,12 +1,12 @@
 #!/usr/bin/perl -W
 
-require fusevdv;
 require C3TT::Client;
 require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = (shift, shift);
+my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
+
 
 if (!defined($project)) {
 	# print usage
@@ -15,7 +15,7 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
+my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'postproc');
 $tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('postprocessing');
 
@@ -29,10 +29,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $props = $tracker->getTicketProperties($tid);
 
-	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+	my $srcfile = $props->{'Processing.Path.Prerelease'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 
 	if (! -f $srcfile) {
-		$srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
+		$srcfile = $props->{'Processing.Path.Prerelease'} . "/" . $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
 		if (! -f $srcfile) {
 			$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
 			exit 1;
