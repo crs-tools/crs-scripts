@@ -15,9 +15,9 @@ if (!defined($project)) {
 	exit 1;
 }
 
-# padding of record start and stop:
+# default padding of record start and stop:
 my $startpadding = 300;
-my $endpadding = 300;
+my $endpadding = 900;
 
 #######################################
 
@@ -45,6 +45,8 @@ foreach ('scheduled', 'recording') {
 			# fetch metadata
 
 			my $props = $tracker->getTicketProperties($tid);
+			my $cur_endpadding = $endpadding;
+			if (defined($props->{'Record.EndPadding'})) {$cur_endpadding = $props->{'Record.EndPadding'}; }
 			my $startdate = $props->{'Fahrplan.Date'};
 			my $starttime = $props->{'Fahrplan.Start'};
 			my $duration = $props->{'Fahrplan.Duration'};
@@ -61,7 +63,7 @@ foreach ('scheduled', 'recording') {
 
 			print ".";
 			my $start = $startdate . '-' . $starttime; # put date and time together
-			my ($paddedstart, $paddedend, undef) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
+			my ($paddedstart, $paddedend, undef) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $cur_endpadding);
 			my $now = POSIX::strftime('%Y.%m.%d-%H_%M_%S', localtime());
 
 			print ".\n";
