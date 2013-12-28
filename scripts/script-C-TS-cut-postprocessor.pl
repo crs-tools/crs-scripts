@@ -6,7 +6,7 @@ require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
+my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
 
 if (!defined($project)) {
 	# print usage
@@ -15,9 +15,8 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'cut-post');
-$tracker->setCurrentProject($project);
-my $ticket = $tracker->assignNextUnassignedForState('copying');
+my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);                                                                    
+my $ticket = $tracker->assignNextUnassignedForState('recording','finalizing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for copying\n";

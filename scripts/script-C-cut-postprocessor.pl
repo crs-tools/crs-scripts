@@ -1,12 +1,13 @@
 #!/usr/bin/perl -W
 
-require fusevdv;
+require CRS::Fuse::VDV;
 require C3TT::Client;
 require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
+my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
+
 
 if (!defined($project)) {
 	# print usage
@@ -15,9 +16,8 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
-$tracker->setCurrentProject($project);
-my $ticket = $tracker->assignNextUnassignedForState('copying');
+my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
+my $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for copying\n";
@@ -31,7 +31,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $isRepaired = 0;
 	$isRepaired = 1 if defined($replacement) && $replacement ne '';
 
-	my $ret = checkCut($vid) + $isRepaired;
+	my $fuse = CRS::Fuse::VDV->new($props);
+	my $ret = $fuse->checkCut($vid) + $isRepaired;
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
 		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE!');
@@ -41,7 +42,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $starttime = $props->{'Record.Starttime'};
 
 	# get metadata from fuse mount and store them in tracker
-	my ($in, $out, $intime, $outtime) = getCutmarks($vid, $starttime);
+	my ($in, $out, $intime, $outtime) = $fuse->getCutmarks($vid, $starttime);
 	my %props = (
 		'Record.Cutin' => $in, 
 		'Record.Cutout' => $out,

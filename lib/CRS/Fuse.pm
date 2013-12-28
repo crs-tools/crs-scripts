@@ -4,10 +4,12 @@ package CRS::Fuse;
 our $default = ();
 $default->{'basepath'} = '/opt/crs/fuse';
 $default->{'binpath'} = '/usr/bin';
-$default->{'capdir'} = '/opt/crs/pieces';
-$default->{'capprefix'} = 'iswision2013';
+$default->{'capdir'} = '/opt/crs/pieces/';
+$default->{'introdir'} = '/opt/crs/intros/';
+$default->{'outrofile'} = '/opt/crs/intros/outro.dv';
+$default->{'capprefix'} = 'saal';
 #$default->{'capprefix'} = 'iwut2012_feld';
-$default->{'capprefix2capdir'} = 0; # wether or not the capprefix with parameter is appended to the capdir
+$default->{'capprefix2capdir'} = 1; # wether or not the capprefix with parameter is appended to the capdir
 $default->{'repairdir'} = '/opt/crs/repair';
 $default->{'fps'} = 25;
 $default->{'defaultfiles'} = 20;  # Anzahl der Schnipsel, wenn keine Anzahl gegeben wird (Standard bei 6min-Schnipsel == 2h)
@@ -15,8 +17,6 @@ $default->{'defaultpieceframes'} = 3*60*$default->{'fps'};  # Laenge eines Schni
 
 $default->{'debug'} = 1;
 
-#my $introdir = '/c3mnt/intros/';
-##my $outrofile = '/c3mnt/outro/outro.dv';
 #my $outrofile = '';
 
 use POSIX;

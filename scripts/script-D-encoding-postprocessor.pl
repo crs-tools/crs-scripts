@@ -6,7 +6,7 @@ require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
+my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
 
 if (!defined($project)) {
 	# print usage
@@ -15,9 +15,9 @@ if (!defined($project)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'postproc');
-$tracker->setCurrentProject($project);
-my $ticket = $tracker->assignNextUnassignedForState('postprocessing');
+my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
+#$tracker->setCurrentProject($project);
+my $ticket = $tracker->assignNextUnassignedForState('encoding', 'postencoding');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postprocessing\n";
@@ -33,16 +33,13 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	if ($basename =~ /_([^_]+$)/) {
 		$slug = $1;
 	}
-	my $srcfile = $props->{'Processing.Path.Prerelease'} . "/" . $props->{'Fahrplan.ID'} . "-" . $slug . "." . $props->{'EncodingProfile.Extension'};
+	my $srcfile = $props->{'Processing.Path.Prerelease'} . "/" . $props->{'Fahrplan.ID'} . 
+		"-" . $props->{'EncodingProfile.Slug'} . "." . $props->{'EncodingProfile.Extension'};
 	print "checking $srcfile\n";
 	if (! -f $srcfile) {
-		$srcfile = $props->{'Processing.Path.Prerelease'} . "/" . $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
-		if (! -f $srcfile) {
-			$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
-			exit 1;
-		}
+		$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
 	}
-	my $destbasename = $props->{'Processing.Path.Release'} . '/' . $props->{'Fahrplan.Slug'};
+	my $destbasename = $props->{'Processing.Path.Release'} . '/' . $props->{'Fahrplan.ID'};
 	my $destfile = $destbasename . "." . $props->{'EncodingProfile.Extension'};
 #	my $return = system ("scp -i /root/.ssh/id_rsa $srcfile ecki\@chief-mirror.fem-net.de:~/release/ ");
 

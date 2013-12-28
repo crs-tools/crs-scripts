@@ -5,9 +5,6 @@ package CRS::Fuse::VDV;
 #my $introdir = '/c3mnt/intros/';
 ##my $outrofile = '/c3mnt/outro/outro.dv';
 #my $outrofile = '';
-my $framesize = 144000;
-
-out $fuse_binary = 'fuse-vdv';
 
 use Data::Dumper;
 use POSIX;
@@ -15,7 +12,20 @@ use Math::Round;
 use strict;
 use parent qw(CRS::Fuse);
 
+sub new {
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args);
+
+    # set binary name
+    $self->{fuse_binary} = 'fuse-vdv';
+    $self->{framesize} = 144000;
+    $self->{fps} = 25;
+
+    return bless($self);
+}
+
 sub getSourceFileLengthInSeconds {
+	my $self = shift;
 	my $filepath = shift;
 	my @files = qx ( ls $filepath* );
 	my $filesize = 0;
@@ -24,21 +34,22 @@ sub getSourceFileLengthInSeconds {
 		chop $file;
 		$filesize += 0 + -s $file;
 	}
-	return round($filesize / ( $framesize * $fps));
+	return round($filesize / ( $self->framesize * $self->fps));
 }
 
 sub checkCut {
+	my $self = shift;
 	my $vid = shift;
 	return 0 unless defined($vid);
 	return 0 unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
-	print "checking mark IN of event $vid\n" if defined($debug);
+	print "checking mark IN of event $vid\n" if defined($self->{debug});
 	my $t = qx ( cat $p/inframe );
 	return 0 unless defined($t) && ($t > 0);
-	print "checking mark OUT of event $vid\n" if defined($debug);
+	print "checking mark OUT of event $vid\n" if defined($self->{debug});
 	$t = qx ( cat $p/outframe );
 	return 0 unless defined($t) && ($t > 0);
-	print "checking virtual files of event $vid\n" if defined($debug);
+	print "checking virtual files of event $vid\n" if defined($self->{debug});
 	$t = "$p/cut-complete.dv";
 	return 0 unless (-f$t);
 	### TODO verfuegbarkeit des quellmaterials pruefen -> erweiterung von fuse-vdv
@@ -46,26 +57,27 @@ sub checkCut {
 }
 
 sub doFuseMount {
+	my $self = shift;
 	my $vid = shift;
 	my $room = shift;
 	my $starttime = shift;
 	my $length = shift;
 	
 	return unless defined($starttime);
-	doFuseUnmount($vid) if isVIDmounted($vid);
-	$length = $defaultlength unless defined($length);
+	doFuseUnmount($vid) if $self->isVIDmounted($vid);
+	$length = $self->defaultlength unless defined($length);
 
-	my $intro = $introdir . $vid . ".dv";
-	my $outro = $outrofile;
+	my $intro = $self->{introdir} . $vid . ".dv";
+	my $outro = $self->{outrofile};
 
 	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
-	$room = $capprefix . $room;
-	my $_capdir = $capdir;
-	$_capdir .= $room if ($capprefix2capdir);
+	$room = $self->{capprefix} . $room;
+	my $_capdir = $self->{capdir};
+	$_capdir .= $room if ($self->{capprefix2capdir});
 	print "mounting FUSE: id=$vid room=$room start=$starttime ".
-		"length=$length\n" if defined($debug);
-	qx ( mkdir -p $basepath/$vid );
-	my $fusecmd = " $binpath/fuse-vdv p=${room}- c=$_capdir st=$starttime ot=$length ";
+		"length=$length\n" if defined($self->{debug});
+	qx ( mkdir -p $self->{basepath}/$vid );
+	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=${room}- c=$_capdir st=$starttime ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=$intro ";
@@ -77,34 +89,36 @@ sub doFuseMount {
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -s -oallow_other,use_ino $mountpath/$vid ";
+        my $p = $self->getMountPath($vid);
+	$fusecmd .= " -s -oallow_other,use_ino $p ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
-	return isVIDmounted($vid);
+	return $self->isVIDmounted($vid);
 }
 
 sub doFuseRepairMount {
+	my $self = shift;
 	my $vid = shift;
 	my $room = shift;
 	my $replacement = shift;
 
-	print "XXXX $vid $room $replacement \n" if defined($debug);
+	print "XXXX $vid $room $replacement \n" if defined($self->{debug});
 
 	return 0 unless defined($replacement);
-	my $replacementpath = $repairdir . '/' . $replacement ;
+	my $replacementpath = $self->repairdir . '/' . $replacement ;
 	return 0 unless -f $replacementpath.'aa';
-	print "(re)mounting FUSE with repaired file $replacementpath*\n" if defined($debug);
+	print "(re)mounting FUSE with repaired file $replacementpath*\n" if defined($self->{debug});
 	doFuseUnmount($vid) if isVIDmounted($vid);
 	my $length = getSourceFileLengthInSeconds($replacementpath);
 
-	my $intro = $introdir . $vid . ".dv";
-	my $outro = $outrofile;
+	my $intro = $self->introdir . $vid . ".dv";
+	my $outro = $self->outrofile;
 
 	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
 	print "mounting FUSE: id=$vid source=$replacementpath ".
-		"length=$length\n" if defined($debug);
-	qx ( mkdir -p $basepath/$vid );
-	my $fusecmd = " $binpath/fuse-vdv p=$replacement c=$repairdir st=aa ot=$length ";
+		"length=$length\n" if defined($self->{debug});
+	qx ( mkdir -p $self->basepath/$vid );
+	my $fusecmd = " $self->binpath/fuse-vdv p=$replacement c=$self->repairdir st=aa ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=$intro ";
@@ -116,21 +130,21 @@ sub doFuseRepairMount {
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -s -oallow_other,use_ino $mountpath/$vid ";
+	$fusecmd .= " -s -oallow_other,use_ino $self->mountpath/$vid ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
 	return isVIDmounted($vid);
 }
 
 sub getCutmarks {
-	my ($vid, $rawstarttime, undef) = @_;
+	my ($self,$vid, $rawstarttime, undef) = @_;
 	return undef unless defined($vid);
 	return undef unless isVIDmounted($vid);
 	my $p = getMountPath($vid);
-	print "getting mark IN of event $vid\n" if defined($debug);
+	print "getting mark IN of event $vid\n" if defined($self->{debug});
 	my $i = qx ( cat $p/inframe );
 	chop($i);
-	print "getting mark OUT of event $vid\n" if defined($debug);
+	print "getting mark OUT of event $vid\n" if defined($self->{debug});
 	my $o = qx ( cat $p/outframe );
 	chop($o);
 

@@ -1,12 +1,12 @@
 #!/usr/bin/perl -W
 
 require POSIX;
-require CRS::Fuse::TS;
+require CRS::Fuse::VDV;
 require C3TT::Client;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'});
+my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
 
 if (!defined($project)) {
 	# print usage
@@ -23,8 +23,8 @@ my $endpadding = 900;
 
 $|=1;
 
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret, 'record');
-$tracker->setCurrentProject($project);
+my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
+#$tracker->setCurrentProject($project);
 
 foreach ('scheduled', 'recording') {
 	my $state = $_;
