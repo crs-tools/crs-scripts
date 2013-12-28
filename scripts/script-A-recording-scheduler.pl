@@ -23,7 +23,7 @@ my $endpadding = 900;
 
 $|=1;
 
-my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
+my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
 
 foreach ('scheduled', 'recording') {
 	my $state = $_;
