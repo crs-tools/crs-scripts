@@ -16,7 +16,7 @@ if (!defined($token)) {
 }
 
 my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
-my $ticket = $tracker->assignNextUnassignedForState('encoding', 'postencoding');
+my $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postprocessing\n";
