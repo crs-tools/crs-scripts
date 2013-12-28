@@ -6,12 +6,12 @@ require C3TT::Client;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
+my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
 
-if (!defined($project)) {
+if (!defined($token)) {
 	# print usage
 	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <project slug>\n\n";
+	print STDERR "./script-.... <secret> <token>\n\n";
 	exit 1;
 }
 
@@ -24,7 +24,6 @@ my $endpadding = 900;
 $|=1;
 
 my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
-#$tracker->setCurrentProject($project);
 
 foreach ('scheduled', 'recording') {
 	my $state = $_;

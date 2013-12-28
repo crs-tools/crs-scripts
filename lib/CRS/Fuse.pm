@@ -54,7 +54,7 @@ sub new {
 # paddedlength in seconds
 sub getPaddedTimes {
 	my ($start, $duration, $startpadding, $endpadding, undef) = @_;
-#	print "getPaddedTimes ($start, $duration, $startpadding, $endpadding)\n" if defined($self->{debug});
+	print "getPaddedTimes ($start, $duration, $startpadding, $endpadding)\n" ;
 
 	my $startdatetime = undef;
 	if ($start =~ /(\d+)-(\d+)-(\d+)-(\d+)[\:-](\d+)/) {

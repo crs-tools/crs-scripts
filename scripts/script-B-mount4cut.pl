@@ -7,17 +7,16 @@ require boolean;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
+my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
 
-if (!defined($project)) {
+if (!defined($token)) {
 	# print usage
 	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <project slug>\n\n";
+	print STDERR "./script-.... <secret> <token>\n\n";
 	exit 1;
 }
 
 my $tracker = C3TT::Client->new('https://tracker.fem.tu-ilmenau.de/rpc', $token, $secret);
-#$tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
@@ -58,7 +57,8 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	# transformation of metadata
 
-	$room =~ s/[^0-9]*//; # only the integer from room property
+	$room =~ s/[^0-9Gg]*//; # only the integer from room property
+	$room = lc($room);
 	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 45 * 60 if (!defined($endpadding)); # default padding is 45 min.
 	my $startpadding = 15 * 60; # default startpadding is 15 min.

@@ -42,7 +42,7 @@ if ! test -f "$MASTER_FILE"; then
 fi
 
 #while true; do
-    perl "$MASTER_FILE" "$CRS_SLUG" "$CRS_SECRET" "tagging" "$$"
+    perl "$MASTER_FILE" "$CRS_TOKEN" "$CRS_SECRET" "tagging" "$$"
     exit $?
 #    # exit code 82 means: I want to be restarted
 #    if test "$?" -ne 82; then

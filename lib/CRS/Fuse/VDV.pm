@@ -139,8 +139,8 @@ sub doFuseRepairMount {
 sub getCutmarks {
 	my ($self,$vid, $rawstarttime, undef) = @_;
 	return undef unless defined($vid);
-	return undef unless isVIDmounted($vid);
-	my $p = getMountPath($vid);
+	return undef unless $self->isVIDmounted($vid);
+	my $p = $self->getMountPath($vid);
 	print "getting mark IN of event $vid\n" if defined($self->{debug});
 	my $i = qx ( cat $p/inframe );
 	chop($i);
@@ -148,7 +148,7 @@ sub getCutmarks {
 	my $o = qx ( cat $p/outframe );
 	chop($o);
 
-	my ($start, $end, undef) = getPaddedTimes ($rawstarttime, '00:00', round ($i / -25), round ($o / 25));
+	my ($start, $end, undef) = CRS::Fuse::getPaddedTimes ($rawstarttime, '00:00', round ($i / -25), round ($o / 25));
 	return ($i, $o, $start, $end);
 }
 

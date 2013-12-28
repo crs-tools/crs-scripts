@@ -5,11 +5,6 @@ if [ -z "${CRS_SECRET}" ]; then
     exit 1;
 fi
 
-if [ -z "${CRS_SLUG}" ]; then
-    echo "CRS_SLUG not set. aborting.";
-    exit 1;
-fi
-
 SCRIPT_NAME=$1
 if [ -z "${SCRIPT_NAME}" ]; then 
     echo "no script given."
