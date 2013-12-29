@@ -4,9 +4,14 @@ require POSIX;
 require CRS::Fuse::VDV;
 require C3TT::Client;
 
+use POSIX qw(strftime);
+use boolean;
+use Time::Piece;
+
 # Call this script with secret and project slug as parameter!
 
 my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
+my $url = "http://tracker.fem-net.de/rpc";
 
 if (!defined($token)) {
 	# print usage
@@ -15,68 +20,43 @@ if (!defined($token)) {
 	exit 1;
 }
 
+my $target_type = 'recording';
+my $target_state = 'recording';
+
 # default padding of record start and stop:
 my $startpadding = 300;
 my $endpadding = 900;
+
+my $filter = {};
+# filter recording events
+$filter->{'Record.StartedBefore'} = strftime('%F %T',localtime(time + $startpadding));
+#$filter->{'Record.EndedBefore'} = localtime(time+$endpadding)->strftime('%F %T');
 
 #######################################
 
 $|=1;
 
-my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
+my $tracker = C3TT::Client->new($url, $token, $secret, 'record');
 
-foreach ('scheduled', 'recording') {
-	my $state = $_;
-	print "querying tickets in state $state ...";
-	my $tickets = $tracker->getUnassignedTicketsInState($state);
+my $tickets_left = 1;
+
+while($tickets_left) {
+    print "querying for ticket in state $target_state ...";
+    my $ticket = $tracker->assignNextUnassignedForState($target_type, $target_state, $filter);
 	print "\n";
-	if (!($tickets) || 0 == scalar(@$tickets)) {
-		print "no tickets currently $state.\n";
-		next;
+	if(!$ticket) {
+	    $tickets_left = 0;
+		print "no tickets currently $target_state. exiting...\n";
+		last;
 	}
-	print "found " . scalar(@$tickets) ." tickets\n";
-	foreach (@$tickets) {
-		my %ticket = %$_;
-		my $tid = $ticket{'id'};
-		if (defined($tid) && $tid > 0) {
-			print "inspecting ticket # $tid .";
 
-			# fetch metadata
+	print "found ticket #" . $ticket->{id} . ". ";
 
-			my $props = $tracker->getTicketProperties($tid);
-			my $cur_endpadding = $endpadding;
-			if (defined($props->{'Record.EndPadding'})) {$cur_endpadding = $props->{'Record.EndPadding'}; }
-			my $startdate = $props->{'Fahrplan.Date'};
-			my $starttime = $props->{'Fahrplan.Start'};
-			my $duration = $props->{'Fahrplan.Duration'};
-
-			# check minimal metadata
-
-			if (!defined($startdate) || !defined($duration) || !defined($starttime)) {
-				print STDERR "NOT ENOUGH METADATA! (ticket# $tid)\n";
-				next;
-			}
-
-
-			# transformation of metadata
-
-			print ".";
-			my $start = $startdate . '-' . $starttime; # put date and time together
-			my ($paddedstart, $paddedend, undef) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $cur_endpadding);
-			my $now = POSIX::strftime('%Y.%m.%d-%H_%M_%S', localtime());
-
-			print ".\n";
-
-			# evaluation
-
-			if ((($state eq 'scheduled') and ($now gt $paddedstart)) or
-				(($state eq 'recording') and ($now gt $paddedend))) {
-				print "moving ticket # $tid from state $state to next state ...";
-				$tracker->setTicketNextState($tid, $state, 'Recording Scheduler: ' .
-					"the current time is over schedule for state $state.");
-				print "\n";
-			}
-		}
-	}
+    if((Time::Piece->strptime($ticket->{time_end},'%Y-%m-%d %T')->epoch - localtime()->tzoffset - time) + $endpadding < 0) {
+        print "event has already ended some time ago. set to recorded...\n";
+        $tracker->setTicketDone($ticket->{id});
+    } else {
+        print "set to $target_state. sleeping a second...\n";
+    }
+	sleep 1;
 }
-
