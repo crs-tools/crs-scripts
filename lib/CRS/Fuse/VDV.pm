@@ -64,7 +64,7 @@ sub doFuseMount {
 	my $length = shift;
 	
 	return unless defined($starttime);
-	doFuseUnmount($vid) if $self->isVIDmounted($vid);
+	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 	$length = $self->defaultlength unless defined($length);
 
 	my $intro = $self->{introdir} . $vid . ".dv";
