@@ -38,7 +38,7 @@ sub getSourceFileLengthInSeconds {
 sub checkCut {
 	my ($self, $vid) = @_;
 	return 0 unless defined($vid);
-	return 0 unless $self->isVIDmounted($vid);
+	#return 0 unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($self->{debug});
 	my $t = qx ( cat $p/inframe );
@@ -108,7 +108,7 @@ sub doFuseRepairMount {
 sub getCutmarks {
 	my ($self, $vid, $rawstarttime, undef) = @_;
 	return undef unless defined($vid);
-	return undef unless $self->isVIDmounted($vid);
+	#return undef unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "getting mark IN of event $vid\n" if defined($self->{debug});
 	my $i = qx ( cat $p/inframe );
