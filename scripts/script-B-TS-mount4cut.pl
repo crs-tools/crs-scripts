@@ -90,7 +90,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 		if ($paddedstart =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) { # different syntax for TS-Capture
 			$paddedstart = "$1-$2-$3_$4-$5-$6";
 		}
-		$r = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
+		$r = $fuse->doFuseMount($vid, $room.'-hd', $paddedstart, $paddedlength);
 	}
 
 	if (defined($r) && $r) {
