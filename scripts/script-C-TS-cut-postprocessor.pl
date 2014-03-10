@@ -3,15 +3,16 @@
 require CRS::Fuse::TS;
 require C3TT::Client;
 require boolean;
+use Data::Dumper;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_SLUG'}, $ENV{'CRS_TOKEN'});
+my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
 
-if (!defined($project)) {
+if (!defined($token)) {
 	# print usage
 	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <project slug>\n\n";
+	print STDERR "./script-.... <secret> <token>\n\n";
 	exit 1;
 }
 
