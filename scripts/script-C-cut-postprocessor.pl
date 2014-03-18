@@ -4,20 +4,16 @@ require CRS::Fuse::VDV;
 require C3TT::Client;
 require boolean;
 
-# Call this script with secret and project slug as parameter!
+my $tracker = C3TT::Client->new();
 
-my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
-
-
-if (!defined($token)) {
-	# print usage
-	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <token>\n\n";
-	exit 1;
+my $ticket;
+if (defined($ENV{'CRS_ROOM'})) {
+        my $filter = {};
+        $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing', $filter);
+} else {
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 }
-
-my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
-my $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for copying\n";

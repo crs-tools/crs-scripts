@@ -42,6 +42,8 @@ sub new {
     # TODO: remove
     $self->{basepath} = $self->{'Processing.Path.Raw'} if defined $self->{'Processing.Path.Raw'};
     $self->{capdir} = $self->{'Processing.Path.Capture'} if defined $self->{'Processing.Path.Capture'};
+    $self->{introdir} = $self->{'Processing.Path.Intros'} if defined $self->{'Processing.Path.Intros'};
+    $self->{outrofile} = $self->{'Processing.Path.Outro'} if defined $self->{'Processing.Path.Outro'};
 
     return $self;
 }
@@ -109,6 +111,9 @@ sub getFuseMounts {
 sub getMountPath {
 	my ($self, $vid) = @_;
 	return undef unless defined($vid);
+	if (defined($self->{'Meta.Acronym'}) && defined($self->{'Fahrplan.Room'})) {
+		return $self->{basepath} . '/' . $self->{'Meta.Acronym'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
+	}
 	return $self->{basepath}."/$vid";
 }
 
@@ -118,7 +123,7 @@ sub isVIDmounted {
 	my @t = $self->getFuseMounts();
 	foreach(@t) {
 		if ($_ eq $vid) {
-			my $pidfile = $self->{basepath}."/$vid/pid";
+			my $pidfile = $self->getMountPath($vid).'/pid';
 			if (-f$pidfile) {
 				return 1;
 			} else {
@@ -133,7 +138,8 @@ sub isVIDmounted {
 sub doFuseUnmount {
 	my ($self, $vid) = @_;
 	return unless defined ($vid);
-	qx ( fusermount -u $self->{basepath}/$vid -z );
+	my $p = $self->getMountPath($vid);
+	qx ( fusermount -u $p -z );
 }
 
 1;

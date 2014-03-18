@@ -71,12 +71,13 @@ sub doFuseMount {
 	my $outro = $self->{outrofile};
 
 	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
-	$room = $self->{capprefix} . $room;
-	my $_capdir = $self->{capdir};
-	$_capdir .= $room if ($self->{capprefix2capdir});
+	# XXX in zukunft nicht mehr: 
+	#$room = $self->{capprefix} . $room;
+	my $_capdir = $self->{'Processing.Path.Capture'} . '/' . $room;
 	print "mounting FUSE: id=$vid room=$room start=$starttime ".
 		"length=$length\n" if defined($self->{debug});
-	qx ( mkdir -p $self->{basepath}/$vid );
+        my $p = $self->getMountPath($vid);
+	qx ( mkdir -p $p );
 	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=${room}- c=$_capdir st=$starttime ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
@@ -89,7 +90,6 @@ sub doFuseMount {
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-        my $p = $self->getMountPath($vid);
 	$fusecmd .= " -s -oallow_other,use_ino $p ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
@@ -114,10 +114,10 @@ sub doFuseRepairMount {
 	my $intro = $self->introdir . $vid . ".dv";
 	my $outro = $self->outrofile;
 
-	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
 	print "mounting FUSE: id=$vid source=$replacementpath ".
 		"length=$length\n" if defined($self->{debug});
-	qx ( mkdir -p $self->basepath/$vid );
+        my $p = $self->getMountPath($vid);
+	qx ( mkdir -p $p );
 	my $fusecmd = " $self->binpath/fuse-vdv p=$replacement c=$self->repairdir st=aa ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
@@ -130,7 +130,7 @@ sub doFuseRepairMount {
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -s -oallow_other,use_ino $self->mountpath/$vid ";
+	$fusecmd .= " -s -oallow_other,use_ino $p ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
 	return isVIDmounted($vid);

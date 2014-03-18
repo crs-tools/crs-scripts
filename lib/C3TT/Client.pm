@@ -64,6 +64,10 @@ sub new {
     $self->{token} = shift;
     $self->{secret} = shift;
 
+    if (!defined($self->{url})) {
+        ($self->{secret}, $self->{token}, $self->{url}) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'}, $ENV{'CRS_TRACKER'});
+    }
+
     # create remote handle
     $self->{remote} = XML::RPC::Fast->new($self->{url}.'?group='.$self->{token}.'&hostname='.hostfqdn);
 

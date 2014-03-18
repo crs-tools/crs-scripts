@@ -8,18 +8,6 @@ use POSIX qw(strftime);
 use boolean;
 use Time::Piece;
 
-# Call this script with secret and project slug as parameter!
-
-my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
-my $url = "http://tracker.fem-net.de/rpc";
-
-if (!defined($token)) {
-	# print usage
-	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <token>\n\n";
-	exit 1;
-}
-
 my $target_type = 'recording';
 my $target_state = 'recording';
 
@@ -37,7 +25,7 @@ $end_filter->{'Record.EndedBefore'} = strftime('%F %T',localtime(time - $endpadd
 
 $|=1;
 
-my $tracker = C3TT::Client->new($url, $token, $secret, 'record');
+my $tracker = C3TT::Client->new();
 
 my $tickets_left = 1;
 

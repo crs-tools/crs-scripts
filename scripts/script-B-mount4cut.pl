@@ -5,19 +5,16 @@ require CRS::Fuse::VDV;
 require C3TT::Client;
 require boolean;
 
-# Call this script with secret and project slug as parameter!
+my $tracker = C3TT::Client->new();
 
-my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
-
-if (!defined($token)) {
-	# print usage
-	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <token>\n\n";
-	exit 1;
+my $ticket;
+if (defined($ENV{'CRS_ROOM'})) {
+	my $filter = {};
+	$filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+	$ticket = $tracker->assignNextUnassignedForState('recording', 'preparing', $filter);
+} else {
+	$ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 }
-
-my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
-my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $tid = $ticket->{id};
@@ -57,8 +54,8 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	# transformation of metadata
 
-	$room =~ s/[^0-9Gg]*//; # only the integer from room property
-	$room = lc($room);
+#	$room =~ s/[^0-9Gg]*//; # only the integer from room property
+#	$room = lc($room);
 	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 45 * 60 if (!defined($endpadding)); # default padding is 45 min.
 	my $startpadding = 15 * 60; # default startpadding is 15 min.
