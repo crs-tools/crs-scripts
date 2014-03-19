@@ -10,9 +10,9 @@ my $ticket;
 if (defined($ENV{'CRS_ROOM'})) {
         my $filter = {};
         $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-        $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing', $filter);
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing', $filter);
 } else {
-        $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
 }
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
@@ -22,7 +22,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $vid = $ticket->{fahrplan_id};
 	print "got ticket # $tid for event $vid\n";
 
-	my $props = $tracker->getTicketProperties($tid, 'Record.*');
+	my $props = $tracker->getTicketProperties($tid);
 	my $replacement = $props->{'Record.SourceReplacement'};
 	my $isRepaired = 0;
 	$isRepaired = 1 if defined($replacement) && $replacement ne '';

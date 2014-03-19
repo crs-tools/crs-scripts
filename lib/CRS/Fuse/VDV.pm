@@ -141,12 +141,13 @@ sub getCutmarks {
 	return undef unless defined($vid);
 	return undef unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
-	print "getting mark IN of event $vid\n" if defined($self->{debug});
+	print "getting mark IN of event $vid" if defined($self->{debug});
 	my $i = qx ( cat $p/inframe );
 	chop($i);
-	print "getting mark OUT of event $vid\n" if defined($self->{debug});
+	print ": $i\ngetting mark OUT of event $vid" if defined($self->{debug});
 	my $o = qx ( cat $p/outframe );
 	chop($o);
+	print ": $o\n" if defined($self->{debug});
 
 	my ($start, $end, undef) = CRS::Fuse::getPaddedTimes ($rawstarttime, '00:00', round ($i / -25), round ($o / 25));
 	return ($i, $o, $start, $end);

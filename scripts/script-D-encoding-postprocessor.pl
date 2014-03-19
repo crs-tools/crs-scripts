@@ -9,9 +9,9 @@ my $ticket;
 if (defined($ENV{'CRS_ROOM'})) {
         my $filter = {};
         $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-        $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing', $filter);
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'postencoding', $filter);
 } else {
-        $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'postencoding');
 }
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
