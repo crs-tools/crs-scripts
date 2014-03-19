@@ -21,6 +21,10 @@ $start_filter->{'Record.StartedBefore'} = strftime('%F %T',localtime(time + $sta
 my $end_filter = {};
 $end_filter->{'Record.EndedBefore'} = strftime('%F %T',localtime(time - $endpadding));
 
+if (defined($ENV{'CRS_ROOM'})) {
+	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+	$end_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+}
 #######################################
 
 $|=1;
