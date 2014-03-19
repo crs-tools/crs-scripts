@@ -13,9 +13,10 @@ my $target_state = 'recording';
 
 # default padding of record start and stop:
 my $startpadding = 300;
-my $endpadding = 900;
+my $endpadding = 900 + 3600;
 
 # filter recording events
+print "my time base now: " . strftime('%F %T',localtime(time)). "\n";
 my $start_filter = {};
 $start_filter->{'Record.StartedBefore'} = strftime('%F %T',localtime(time + $startpadding));
 my $end_filter = {};
