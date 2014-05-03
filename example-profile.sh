@@ -7,4 +7,5 @@ export CRS_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 export CRS_ROOM=H1
 
 # a place to store voc_ca.pem
-#export HTTPS_CA_DIR=$HOME/CAs/
+# needs to be a hashed dir (man c_rehash)
+#export HTTPS_CA_DIR=/opt/crs/software/configs/ssl/
