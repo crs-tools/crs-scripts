@@ -44,15 +44,14 @@ while($tickets_left) {
 		last;
 	}
 
-	print "found ticket #" . $ticket->{id} . ". ";
+    print "found ticket #" . $ticket->{id} . ". ";
 
     if((Time::Piece->strptime($ticket->{time_end},'%Y-%m-%d %T')->epoch - localtime()->tzoffset - time) + $endpadding < 0) {
         print "event has already ended some time ago. set to recorded...\n";
         $tracker->setTicketDone($ticket->{id});
-    } else {
         print "set to $target_state. sleeping a second...\n";
+        sleep 1;
     }
-	sleep 1;
 }
 
 # find assigned tickets in state recording
@@ -62,6 +61,8 @@ my $tickets = $tracker->getAssignedForState($target_type, $target_state, $end_fi
 
 if (!($tickets) || 0 == scalar(@$tickets)) {
     print "no assigned tickets currently $target_state. exiting...\n";
+    # since this script handles more than one ticket per execution, we do not 
+    # use the special exit code for short sleep
     exit 0;
 }
 

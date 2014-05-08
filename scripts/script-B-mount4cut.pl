@@ -88,6 +88,8 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 		$tracker->setTicketProperties($tid, \%props2); # when successful, do actually write back properties
 		print "FUSE mount created successfully.\n";
 		$tracker->setTicketDone($tid, 'Mount4cut: FUSE mount created successfully.');
+           # indicate short sleep to wrapper script
+           exit(100);
 	} else {
 		print "Mount4cut: ERROR: could not create FUSE mount!\n";
 		$tracker->setTicketFailed($tid, 'Mount4cut: ERROR: could not create FUSE mount!');

@@ -50,6 +50,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	if ($return eq '0') {
 		$tracker->setTicketDone($tid, 'Encoding postprocessor: scp to brisky completed.');
+		# indicate short sleep to wrapper script
+		exit(100);
 	} else {
 		$tracker->setTicketFailed($tid, 'Encoding postprocessor: scp to brisky failed');
 	}

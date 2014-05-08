@@ -17,6 +17,9 @@ if [ -z "${SLEEP_TIME}" ]; then
     SLEEP_TIME=30
 fi
 
+# short sleep time after work has done
+SLEEP_TIME_SHORT=2
+
 # only run once per host
 mkdir -p /tmp/crs
 PIDFILE=/tmp/crs/${SCRIPT_NAME}.pid
@@ -65,6 +68,11 @@ echo "-------------------------------------------"
 while true; do
     echo "------- executing ($(date +%X)) ---------"
     "${SCRIPT}"
-    echo "------- waiting ${SLEEP_TIME}s ($(date +%X)) ---------"
-    sleep ${SLEEP_TIME}
+    if [ $? -eq 100 ]; then
+        echo "------- waiting (short) ${SLEEP_TIME_SHORT}s ($(date +%X)) ---------"
+        sleep ${SLEEP_TIME_SHORT}
+    else
+        echo "------- waiting ${SLEEP_TIME}s ($(date +%X)) ---------"
+        sleep ${SLEEP_TIME}
+    fi
 done

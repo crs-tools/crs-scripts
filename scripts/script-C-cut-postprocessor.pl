@@ -46,6 +46,9 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		'Record.Cutouttime' => $outtime);
 	$tracker->setTicketProperties($tid, \%props);
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
+	# indicate short sleep to wrapper script
+	exit(100);
+
 }
 
 
