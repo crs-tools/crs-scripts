@@ -105,12 +105,12 @@ sub doFuseRepairMount {
 
 	return 0 unless defined($replacement) and ($replacement ne '');
 
-	my $replacementfullpath = $self->repairdir . '/' . $replacement ;
-	my $replacementfulldir = $self->repairdir;
+	my $replacementfullpath = $self->{repairdir} . '/' . $replacement ;
+	my $replacementfulldir = $self->{repairdir};
 	my $replacementfilename = $replacement;
 	# support relative paths in replacement property
 	if ($replacement =~ /^([^\/].*)\/([^\/]+)$/) {
-		$replacementfulldir = $self->repairdir . '/' . $1;
+		$replacementfulldir = $self->{repairdir} . '/' . $1;
 		$replacementfilename = $2;
 	}
 	# support absolute paths in replacement property
