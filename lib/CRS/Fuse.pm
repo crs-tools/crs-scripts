@@ -101,7 +101,7 @@ sub getFuseMounts {
 	my @mounts = split("\n", $t);
 	my @ret = ();
 	foreach(@mounts) {
-		if ($_ =~ /on\ \/[^\s]+\/(\d+)\s/) {
+		if ($_ =~ /on\ \/.+\/(\d+)\stype.fuse/) {
 			push(@ret, $1);
 		}
 	}
@@ -139,7 +139,7 @@ sub doFuseUnmount {
 	my ($self, $vid) = @_;
 	return unless defined ($vid);
 	my $p = $self->getMountPath($vid);
-	qx ( fusermount -u $p -z );
+	qx ( fusermount -u "$p" -z );
 }
 
 1;

@@ -27,7 +27,7 @@ sub new {
 sub getSourceFileLengthInSeconds {
 	my $self = shift;
 	my $filepath = shift;
-	my @files = qx ( ls $filepath* );
+	my @files = qx ( ls "$filepath*" );
 	my $filesize = 0;
 	foreach (@files) {
 		my $file = $_;
@@ -44,10 +44,10 @@ sub checkCut {
 	return 0 unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($self->{debug});
-	my $t = qx ( cat $p/inframe );
+	my $t = qx ( cat "$p/inframe" );
 	return 0 unless defined($t) && ($t > 0);
 	print "checking mark OUT of event $vid\n" if defined($self->{debug});
-	$t = qx ( cat $p/outframe );
+	$t = qx ( cat "$p/outframe" );
 	return 0 unless defined($t) && ($t > 0);
 	print "checking virtual files of event $vid\n" if defined($self->{debug});
 	$t = "$p/cut-complete.dv";
@@ -78,19 +78,19 @@ sub doFuseMount {
 		"length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
 	qx ( mkdir -p $p );
-	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=${room}- c=$_capdir st=$starttime ot=$length ";
+	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=\"${room}-\" c=\"$_capdir\" st=\"$starttime\" ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
-		$fusecmd .= " intro=$intro ";
+		$fusecmd .= " intro=\"$intro\" ";
 	} else {
 		print STDERR "WARNING: intro file doesn't exist! ($intro)\n";
 	}
 	if ( -e $outro ) {
-		$fusecmd .= " outro=$outro ";
+		$fusecmd .= " outro=\"$outro\" ";
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -s -oallow_other,use_ino $p ";
+	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
 	return $self->isVIDmounted($vid);
@@ -134,7 +134,7 @@ sub doFuseRepairMount {
 	print "mounting FUSE: id=$vid source=$replacementfullpath length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
 	qx ( mkdir -p "$p" );
-	my $fusecmd = $self->{binpath}."/fuse-vdv st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
+	my $fusecmd = $self->{binpath} . '/' . $self->{fuse_binary} . " st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=\"$intro\" ";
@@ -158,10 +158,10 @@ sub getCutmarks {
 	return undef unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "getting mark IN of event $vid" if defined($self->{debug});
-	my $i = qx ( cat $p/inframe );
+	my $i = qx ( cat "$p/inframe" );
 	chop($i);
 	print ": $i\ngetting mark OUT of event $vid" if defined($self->{debug});
-	my $o = qx ( cat $p/outframe );
+	my $o = qx ( cat "$p/outframe" );
 	chop($o);
 	print ": $o\n" if defined($self->{debug});
 
