@@ -34,7 +34,7 @@ sub getSourceFileLengthInSeconds {
 		chop $file;
 		$filesize += 0 + -s $file;
 	}
-	return round($filesize / ( $self->framesize * $self->fps));
+	return round($filesize / ( $self->{framesize} * $self->{fps}));
 }
 
 sub checkCut {
@@ -124,17 +124,17 @@ sub doFuseRepairMount {
 	return 0 unless -f $replacementfullpath;
 
 	print "(re)mounting FUSE with repaired file $replacementfullpath*\n" if defined($self->{debug});
-	doFuseUnmount($vid) if isVIDmounted($vid);
+	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 
 
-	my $length = getSourceFileLengthInSeconds($replacementfullpath);
-	my $intro = $self->introdir . $vid . ".dv";
-	my $outro = $self->outrofile;
+	my $length = $self->getSourceFileLengthInSeconds($replacementfullpath);
+	my $intro = $self->{introdir} . $vid . ".dv";
+	my $outro = $self->{outrofile};
 
 	print "mounting FUSE: id=$vid source=$replacementfullpath length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
-	qx ( mkdir -p $p );
-	my $fusecmd = " $self->binpath/fuse-vdv st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
+	qx ( mkdir -p "$p" );
+	my $fusecmd = $self->{binpath}."/fuse-vdv st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=\"$intro\" ";
@@ -149,7 +149,7 @@ sub doFuseRepairMount {
 	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
-	return isVIDmounted($vid);
+	return $self->isVIDmounted($vid);
 }
 
 sub getCutmarks {
