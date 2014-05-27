@@ -99,38 +99,54 @@ sub doFuseMount {
 sub doFuseRepairMount {
 	my $self = shift;
 	my $vid = shift;
-	my $room = shift;
 	my $replacement = shift;
 
-	print "XXXX $vid $room $replacement \n" if defined($self->{debug});
+	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
 
-	return 0 unless defined($replacement);
-	my $replacementpath = $self->repairdir . '/' . $replacement ;
-	return 0 unless -f $replacementpath.'aa';
-	print "(re)mounting FUSE with repaired file $replacementpath*\n" if defined($self->{debug});
+	return 0 unless defined($replacement) and ($replacement ne '');
+
+	my $replacementfullpath = $self->repairdir . '/' . $replacement ;
+	my $replacementfulldir = $self->repairdir;
+	my $replacementfilename = $replacement;
+	# support relative paths in replacement property
+	if ($replacement =~ /^([^\/].*)\/([^\/]+)$/) {
+		$replacementfulldir = $self->repairdir . '/' . $1;
+		$replacementfilename = $2;
+	}
+	# support absolute paths in replacement property
+	if ($replacement =~ /^(\/.*)\/([^\/]+)$/) {
+		$replacementfullpath = $replacement;
+		$replacementfulldir = $1;
+		$replacementfilename = $2;
+	}
+
+	print "checking existence of '$replacementfullpath'\n" if defined($self->{debug});
+	return 0 unless -f $replacementfullpath;
+
+	print "(re)mounting FUSE with repaired file $replacementfullpath*\n" if defined($self->{debug});
 	doFuseUnmount($vid) if isVIDmounted($vid);
-	my $length = getSourceFileLengthInSeconds($replacementpath);
 
+
+	my $length = getSourceFileLengthInSeconds($replacementfullpath);
 	my $intro = $self->introdir . $vid . ".dv";
 	my $outro = $self->outrofile;
 
-	print "mounting FUSE: id=$vid source=$replacementpath ".
-		"length=$length\n" if defined($self->{debug});
+	print "mounting FUSE: id=$vid source=$replacementfullpath length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
 	qx ( mkdir -p $p );
-	my $fusecmd = " $self->binpath/fuse-vdv p=$replacement c=$self->repairdir st=aa ot=$length ";
+	my $fusecmd = " $self->binpath/fuse-vdv st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
-		$fusecmd .= " intro=$intro ";
+		$fusecmd .= " intro=\"$intro\" ";
 	} else {
 		print STDERR "WARNING: intro file doesn't exist! ($intro)\n";
 	}
 	if ( -e $outro ) {
-		$fusecmd .= " outro=$outro ";
+		$fusecmd .= " outro=\"$outro\" ";
 	} else {
 		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
-	$fusecmd .= " -s -oallow_other,use_ino $p ";
+	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
 	print "FUSE cmd: $fusecmd\n";
 	qx ( $fusecmd );
 	return isVIDmounted($vid);

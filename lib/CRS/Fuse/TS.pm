@@ -91,7 +91,7 @@ sub doFuseRepairMount {
 	my ($self, $vid) = @_;
 	my $replacement = shift;
 
-	print "XXXX $vid $replacement \n" if defined($self->{debug});
+	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
 
 	return 0 unless defined($replacement);
 	my $replacementpath = $self->{repairdir} . '/' . $replacement ;

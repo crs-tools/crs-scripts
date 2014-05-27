@@ -79,7 +79,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	my $r = 1;
 	if ($isRepaired) {
-		$r = $fuse->doFuseRepairMount($vid, $room, $replacement);
+		$r = $fuse->doFuseRepairMount($vid, $replacement);
 	} else {
 		$r = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
