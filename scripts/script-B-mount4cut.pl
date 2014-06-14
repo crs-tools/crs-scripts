@@ -50,6 +50,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 		$tracker->setTicketFailed($tid, 'Not enough metadata');
 		die("NOT ENOUGH METADATA!\n");
 	}
+	my $startpadding = $props->{'Record.StartPadding'};
 	my $endpadding = $props->{'Record.EndPadding'};
 
 	# transformation of metadata
@@ -57,8 +58,8 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 #	$room =~ s/[^0-9Gg]*//; # only the integer from room property
 #	$room = lc($room);
 	my $start = $startdate . '-' . $starttime; # put date and time together
-	$endpadding = 45 * 60 if (!defined($endpadding)); # default padding is 45 min.
-	my $startpadding = 15 * 60; # default startpadding is 15 min.
+	$endpadding = 15 * 60 if (!defined($endpadding)); # default padding is 15 min.
+	$startpadding = 15 * 60 unless defined($startpadding); # default startpadding is 15 min.
 	my ($paddedstart, $paddedend, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
 	my $paddedstart2 = $paddedstart;
 	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
