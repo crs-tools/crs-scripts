@@ -27,7 +27,7 @@ sub new {
 sub getSourceFileLengthInSeconds {
 	my $self = shift;
 	my $filepath = shift;
-	my @files = qx ( ls "$filepath*" );
+	my @files = qx ( ls "$filepath"* );
 	my $filesize = 0;
 	foreach (@files) {
 		my $file = $_;
