@@ -13,14 +13,14 @@ my $target_state = 'recording';
 
 # default padding of record start and stop:
 my $startpadding = 300;
-my $endpadding = 900 + 3600;
+my $endpadding = 900;
 
 # filter recording events
-print "my time base now: " . strftime('%F %T',localtime(time)). "\n";
+print "my time base now: " . strftime('%F %T',gmtime(time)). "\n";
 my $start_filter = {};
-$start_filter->{'Record.StartedBefore'} = strftime('%F %T',localtime(time + $startpadding));
+$start_filter->{'Record.StartedBefore'} = strftime('%F %T', gmtime(time + $startpadding));
 my $end_filter = {};
-$end_filter->{'Record.EndedBefore'} = strftime('%F %T',localtime(time - $endpadding));
+$end_filter->{'Record.EndedBefore'} = strftime('%F %T', gmtime(time - $endpadding));
 
 if (defined($ENV{'CRS_ROOM'})) {
 	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
@@ -46,7 +46,7 @@ while($tickets_left) {
 
     print "found ticket #" . $ticket->{id} . ". ";
 
-    if((Time::Piece->strptime($ticket->{time_end},'%Y-%m-%d %T')->epoch - localtime()->tzoffset - time) + $endpadding < 0) {
+    if((Time::Piece->strptime($ticket->{time_end},'%Y-%m-%d %T')->epoch - time) + $endpadding < 0) {
         print "event has already ended some time ago. set to recorded...\n";
         $tracker->setTicketDone($ticket->{id});
         print "set to $target_state. sleeping a second...\n";
