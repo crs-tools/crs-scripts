@@ -22,7 +22,7 @@ $start_filter->{'Record.StartedBefore'} = strftime('%F %T', gmtime(time + $start
 my $end_filter = {};
 $end_filter->{'Record.EndedBefore'} = strftime('%F %T', gmtime(time - $endpadding));
 
-if (defined($ENV{'CRS_ROOM'})) {
+if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
 	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
 	$end_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
 }
@@ -35,7 +35,9 @@ my $tracker = C3TT::Client->new();
 my $tickets_left = 1;
 
 while($tickets_left) {
-    print "querying for ticket with next state $target_state ...";
+    print "querying for ticket with next state $target_state";
+    print " for room " . $ENV{'CRS_ROOM'} if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '');
+    print " ...";
     my $ticket = $tracker->assignNextUnassignedForState($target_type, $target_state, $start_filter);
 	print "\n";
 	if(!$ticket) {

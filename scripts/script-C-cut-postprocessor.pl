@@ -7,7 +7,7 @@ require boolean;
 my $tracker = C3TT::Client->new();
 
 my $ticket;
-if (defined($ENV{'CRS_ROOM'})) {
+if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
         my $filter = {};
         $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
         $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing', $filter);
