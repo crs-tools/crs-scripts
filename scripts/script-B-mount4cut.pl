@@ -44,8 +44,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	# check minimal metadata
 
-	if (!defined($room) || !defined($startdate) 
-		|| !defined($duration) || !defined($starttime)) {
+	if (!defined($startdate) || !defined($duration) || !defined($starttime)) {
 		print STDERR "NOT ENOUGH METADATA!\n";
 		$tracker->setTicketFailed($tid, 'Not enough metadata');
 		die("NOT ENOUGH METADATA!\n");
@@ -69,7 +68,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	# prepare attributes for writeback
 
 	my %props2 = ();
-	$props2{'Record.Room'} = $room;
+	$props2{'Record.Room'} = $room if (defined($room));
 	$props2{'Record.Starttime'} = $paddedstart2;
 	$props2{'Record.Stoptime'} = $paddedend2;
 	$props2{'Record.DurationSeconds'} = $paddedlength;

@@ -68,17 +68,20 @@ sub doFuseMount {
 	$length = $self->defaultlength unless defined($length);
 
 	my $intro = $self->{introdir} . $vid . ".dv";
+	if (! -e $intro && $self->{introdir} =~ /\.dv$/) {
+		$intro = $self->{introdir};
+	}
 	my $outro = $self->{outrofile};
 
-	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
-	# XXX in zukunft nicht mehr: 
-	#$room = $self->{capprefix} . $room;
+	my $prefix = '';
+	$prefix = $room . '-' if (defined($room));
+	$room = '' if (!defined($room));
 	my $_capdir = $self->{'Processing.Path.Capture'} . '/' . $room;
 	print "mounting FUSE: id=$vid room=$room start=$starttime ".
 		"length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
 	qx ( mkdir -p $p );
-	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=\"${room}-\" c=\"$_capdir\" st=\"$starttime\" ot=$length ";
+	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=\"${prefix}\" c=\"$_capdir\" st=\"$starttime\" ot=$length ";
 	# check existence of intro and outro
 	if ( -e $intro ) {
 		$fusecmd .= " intro=\"$intro\" ";
