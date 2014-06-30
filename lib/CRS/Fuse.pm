@@ -2,18 +2,11 @@
 package CRS::Fuse;
 
 our $default = ();
-$default->{'basepath'} = '/opt/crs/fuse';
 $default->{'binpath'} = '/usr/bin';
-$default->{'capdir'} = '/opt/crs/pieces/';
-$default->{'introdir'} = '/opt/crs/intros/';
-$default->{'outrofile'} = '/opt/crs/intros/outro.dv';
-$default->{'capprefix'} = 'saal';
-#$default->{'capprefix'} = 'iwut2012_feld';
-$default->{'capprefix2capdir'} = 1; # wether or not the capprefix with parameter is appended to the capdir
-$default->{'repairdir'} = '/opt/crs/repair';
+
 $default->{'fps'} = 25;
 $default->{'defaultfiles'} = 20;  # Anzahl der Schnipsel, wenn keine Anzahl gegeben wird (Standard bei 6min-Schnipsel == 2h)
-$default->{'defaultpieceframes'} = 3*60*$default->{'fps'};  # Laenge eines Schnispels in Frames (Standard: 3 min.)
+$default->{'defaultpieceframes'} = 3*60*$default->{'fps'};  # Laenge eines Schnipsels in Frames (Standard: 3 min.)
 
 $default->{'debug'} = 1;
 
@@ -38,12 +31,8 @@ sub new {
         $self->{$_} = $cfg{$_};
     }
 
-    # temporary property mapping
-    # TODO: remove
-    $self->{basepath} = $self->{'Processing.Path.Raw'} if defined $self->{'Processing.Path.Raw'};
-    $self->{capdir} = $self->{'Processing.Path.Capture'} if defined $self->{'Processing.Path.Capture'};
-    $self->{introdir} = $self->{'Processing.Path.Intros'} if defined $self->{'Processing.Path.Intros'};
-    $self->{outrofile} = $self->{'Processing.Path.Outro'} if defined $self->{'Processing.Path.Outro'};
+    # check if some defaults are replaced
+    $self->{'fps'} = $self->{'Capture.FPS'} if defined $self->{'Capture.FPS'};
 
     return $self;
 }
@@ -110,11 +99,26 @@ sub getFuseMounts {
 
 sub getMountPath {
 	my ($self, $vid) = @_;
-	return undef unless defined($vid);
+	return unless defined($vid);
+	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $self->{'Processing.Path.Raw'};
+	my $base = $self->{'Processing.Path.Raw'};
 	if (defined($self->{'Meta.Acronym'}) && defined($self->{'Fahrplan.Room'})) {
-		return $self->{basepath} . '/' . $self->{'Meta.Acronym'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
+		return $base . '/' . $self->{'Meta.Acronym'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
 	}
-	return $self->{basepath}."/$vid";
+	return "$base/$vid";
+}
+
+sub getCapturePath {
+	my ($self, $room) = @_;
+	my $base = $self->{'Processing.Path.Capture'};
+	if (! -e $base && ! -d $base) {
+		print STDERR "ERROR: Processing.Path.Capture seems to be totally wrong!\n";
+		die;
+	}
+	if (-e -d "$base/$room") {
+		return "$base/$room";
+	}
+	return $base;
 }
 
 sub isVIDmounted {
@@ -140,6 +144,45 @@ sub doFuseUnmount {
 	return unless defined ($vid);
 	my $p = $self->getMountPath($vid);
 	qx ( fusermount -u "$p" -z );
+}
+
+sub getIntro {
+	my ($self, $suffix, $id) = @_;
+	my $start = $self->{'Processing.Path.Intros'};
+	return unless defined $start;
+	return $self->getCustomFile($start, 'intro', $suffix, $id);
+}
+
+sub getOutro {
+	my ($self, $suffix, $id) = @_;
+	my $start = $self->{'Processing.Path.Outro'};
+	return unless defined $start;
+	return $self->getCustomFile($start, 'outro', $suffix, $id);
+}
+
+sub getCustomFile {
+	my ($self, $start, $name, $suffix, $id) = @_;
+	$suffix = '' unless defined ($suffix);
+	my $dir = $self->{'Processing.Path.Intros'};
+	return unless defined $dir;
+	
+	# Test if the property points to a valid location
+	if (-e $dir) {
+	# Test if property points to a directory
+		if (-d $dir) {
+			# Test for file named id.suffix in this dir
+			if (defined($id) && -e "$dir/$id.$suffix") {
+				return "$dir/$id.$suffix";
+			}
+			# Test for file named name.suffix in this dir
+			if (-e "$dir/$name.$suffix") {
+				return "$dir/$name.$suffix";
+			}
+		} else {
+			# must be a file - use it
+			return $dir;
+		}
+	}
 }
 
 1;

@@ -69,20 +69,20 @@ sub doFuseMount {
 		$length = $files * $self->{defaultpieceframes} / $self->{fps};
 	}
 	my $frames = $length * $self->{fps};
+	my $prefix = $self->{'Processing.Path.CaptureFilePrefix'};
+	$prefix = '' unless defined($prefix);
+	$prefix .= $room;
 
-	# Raum zum gesamten Prefix machen, dazu Config-Wert verwenden
-	$room = $self->{capprefix} . $room;
-	my $_capdir = $self->{capdir};
-	$_capdir .= $room if ($self->{capprefix2capdir});
-	print "mounting FUSE: id=$vid room=$room start=$starttime ".
-		"numfiles=$files totalframes=$frames\n" if defined($self->{debug});
 
+	my $capdir = $self->getCapturePath($room);
 	my $p = $self->getMountPath($vid);
 	return 0 unless defined($p);
+	print "creating mount path \"$p\"\n" if defined($self->{debug});
 	qx ( mkdir -p "$p" );
-	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"${room}-\" c=\"$_capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
+	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"$prefix-\" c=\"$capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
 	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
-	print "FUSE cmd: $fusecmd\n";
+
+	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
 	qx ( $fusecmd );
 	return $self->isVIDmounted($vid);
 }
@@ -92,10 +92,12 @@ sub doFuseRepairMount {
 	my $replacement = shift;
 
 	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
-
 	return 0 unless defined($replacement);
-	my $replacementpath = $self->{repairdir} . '/' . $replacement ;
-	return 0 unless -f $replacementpath;
+	die "ERROR: no Processing.Path.Repair specified!\n" unless defined $self->{'Processing.Path.Repair'};
+
+	my $repairdir = $self->{'Processing.Path.Repair'};
+	my $replacementpath = "$repairdir/$replacement";
+	return 0 unless -r $replacementpath;
 	print "replacing FUSE with repaired file $replacementpath*\n" if defined($self->{debug});
 	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);

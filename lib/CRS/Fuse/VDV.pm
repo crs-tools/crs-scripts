@@ -1,11 +1,6 @@
 
 package CRS::Fuse::VDV;
 
-#my $defaultlength = 7200;  # Laenge des gefusten Videos (vorm Schnitt) in Sekunden, falls kein konkreter Wert bekannt ist
-#my $introdir = '/c3mnt/intros/';
-##my $outrofile = '/c3mnt/outro/outro.dv';
-#my $outrofile = '';
-
 use Data::Dumper;
 use POSIX;
 use Math::Round;
@@ -17,9 +12,9 @@ sub new {
     my $self = $class->SUPER::new(@args);
 
     # set binary name
-    $self->{fuse_binary} = 'fuse-vdv';
-    $self->{framesize} = 144000;
-    $self->{fps} = 25;
+    $self->{'fuse_binary'} = 'fuse-vdv';
+    $self->{'framesize'} = 144000;
+    $self->{'framesize'} = $self->{'Capture.DVFrameSize'} if defined $self->{'Capture.DVFrameSize'};
 
     return bless($self);
 }
@@ -34,7 +29,7 @@ sub getSourceFileLengthInSeconds {
 		chop $file;
 		$filesize += 0 + -s $file;
 	}
-	return round($filesize / ( $self->{framesize} * $self->{fps}));
+	return round($filesize / ( $self->{'framesize'} * $self->{'fps'}));
 }
 
 sub checkCut {
@@ -67,34 +62,27 @@ sub doFuseMount {
 	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 	$length = $self->defaultlength unless defined($length);
 
-	my $intro = $self->{introdir} . $vid . ".dv";
-	if (! -e $intro && $self->{introdir} =~ /\.dv$/) {
-		$intro = $self->{introdir};
-	}
-	my $outro = $self->{outrofile};
+	my $intro = $self->getIntro('.dv', $vid);
+	my $outro = $self->getOutro('.dv', $vid);
+	my $prefix = $self->{'Processing.Path.CaptureFilePrefix'};
+	$prefix = '' unless defined($prefix);
+	$prefix .= $room;
 
-	my $prefix = '';
-	$prefix = $room . '-' if (defined($room));
-	$room = '' if (!defined($room));
-	my $_capdir = $self->{'Processing.Path.Capture'} . '/' . $room;
-	print "mounting FUSE: id=$vid room=$room start=$starttime ".
-		"length=$length\n" if defined($self->{debug});
+	my $capdir = $self->getCapturePath($room);
         my $p = $self->getMountPath($vid);
+	print "creating mount path \"$p\"\n" if defined($self->{debug});
 	qx ( mkdir -p $p );
-	my $fusecmd = " $self->{binpath}/$self->{fuse_binary} p=\"${prefix}\" c=\"$_capdir\" st=\"$starttime\" ot=$length ";
+
+	my $fusecmd = " $self->{binpath}/$self->{'fuse_binary'} p=\"${prefix}-\" c=\"$capdir\" st=\"$starttime\" ot=$length ";
 	# check existence of intro and outro
-	if ( -e $intro ) {
+	if (defined($intro) && -e $intro ) {
 		$fusecmd .= " intro=\"$intro\" ";
-	} else {
-		print STDERR "WARNING: intro file doesn't exist! ($intro)\n";
 	}
-	if ( -e $outro ) {
+	if (defined($outro) && -e $outro ) {
 		$fusecmd .= " outro=\"$outro\" ";
-	} else {
-		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
 	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
-	print "FUSE cmd: $fusecmd\n";
+	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
 	qx ( $fusecmd );
 	return $self->isVIDmounted($vid);
 }
@@ -107,13 +95,15 @@ sub doFuseRepairMount {
 	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
 
 	return 0 unless defined($replacement) and ($replacement ne '');
+	die "ERROR: no Processing.Path.Repair specified!\n" unless defined $self->{'Processing.Path.Repair'};
+	my $repairdir = $self->{'Processing.Path.Repair'};
 
-	my $replacementfullpath = $self->{repairdir} . '/' . $replacement ;
-	my $replacementfulldir = $self->{repairdir};
+	my $replacementfullpath = "repairdir/$replacement";
+	my $replacementfulldir = $repairdir;
 	my $replacementfilename = $replacement;
 	# support relative paths in replacement property
 	if ($replacement =~ /^([^\/].*)\/([^\/]+)$/) {
-		$replacementfulldir = $self->{repairdir} . '/' . $1;
+		$replacementfulldir = "$repairdir/$1";
 		$replacementfilename = $2;
 	}
 	# support absolute paths in replacement property
@@ -124,33 +114,29 @@ sub doFuseRepairMount {
 	}
 
 	print "checking existence of '$replacementfullpath'\n" if defined($self->{debug});
-	return 0 unless -f $replacementfullpath;
+	return 0 unless -e $replacementfullpath;
 
 	print "(re)mounting FUSE with repaired file $replacementfullpath*\n" if defined($self->{debug});
 	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 
 
 	my $length = $self->getSourceFileLengthInSeconds($replacementfullpath);
-	my $intro = $self->{introdir} . $vid . ".dv";
-	my $outro = $self->{outrofile};
+	my $intro = $self->getIntro('.dv', $vid);
+	my $outro = $self->getOutro('.dv', $vid);
 
 	print "mounting FUSE: id=$vid source=$replacementfullpath length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
 	qx ( mkdir -p "$p" );
-	my $fusecmd = $self->{binpath} . '/' . $self->{fuse_binary} . " st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
+	my $fusecmd = $self->{binpath} . '/' . $self->{'fuse_binary'} . " st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
 	# check existence of intro and outro
-	if ( -e $intro ) {
+	if (defined($intro) && -e $intro ) {
 		$fusecmd .= " intro=\"$intro\" ";
-	} else {
-		print STDERR "WARNING: intro file doesn't exist! ($intro)\n";
 	}
-	if ( -e $outro ) {
+	if (defined($outro) && -e $outro ) {
 		$fusecmd .= " outro=\"$outro\" ";
-	} else {
-		print STDERR "WARNING: outro file doesn't exist! ($outro)\n";
 	}
 	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
-	print "FUSE cmd: $fusecmd\n";
+	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
 	qx ( $fusecmd );
 	return $self->isVIDmounted($vid);
 }
