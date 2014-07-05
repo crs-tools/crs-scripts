@@ -156,6 +156,7 @@ sub getIntro {
 sub getOutro {
 	my ($self, $suffix, $id) = @_;
 	my $start = $self->{'Processing.Path.Outro'};
+	$start = $self->{'Processing.Path.Outros'} if(!defined($start));
 	return unless defined $start;
 	return $self->getCustomFile($start, 'outro', $suffix, $id);
 }
