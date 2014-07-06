@@ -7,72 +7,65 @@ use Data::Dumper;
 
 # Call this script with secret and project slug as parameter!
 
-my ($secret, $project) = (shift, shift);
+my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
 
-if (!defined($project)) {
+if (!defined($token)) {
 	# print usage
 	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <project slug>\n\n";
+	print STDERR "./script-.... <secret> <token>\n\n";
 	exit 1;
 }
-
-my $tracker = C3TT::Client->new('http://tracker.fem.tu-ilmenau.de/rpc', 'C3TT', $secret);
-$tracker->setCurrentProject($project);
-my $ticket = $tracker->assignNextUnassignedForState('releasing');
+# TODO URL from env
+my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
+my $ticket = $tracker->assignNextUnassignedForState('encoding', 'releasing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
-	print "currently no tickets for releasing\n";
+        print "currently no tickets for releasing\n";
 } else {
-	my $tid = $ticket->{id};
-	print "releasing ticket # $tid\n";
+        my $tid = $ticket->{id};
+        my $vid = $ticket->{fahrplan_id};
+        print "got ticket # $tid for event $vid\n";
+        my $props = $tracker->getTicketProperties($tid);
 	#print Dumper($ticket);
+	#print Dumper($props);
 
-	# fetch metadata
-
-	my $props = $tracker->getTicketProperties($tid);
-
-	# preparation of new metadata
+	my $base = $props->{'Encoding.Basename'};
 	
-	my $path = '/mnt/fem-storage/home/atze/IWUT11/';
-	my $srcfile = $props->{'EncodingProfile.Basename'} . "." . $props->{'EncodingProfile.Extension'};
-	my $testfile = "/c3mnt/encoded/". $srcfile;
-
-	if (! -f $testfile) {
-		$srcfile = $props->{'Encoding.Basename'} . "." . $props->{'EncodingProfile.Extension'};
-		my $testfile = "/c3mnt/encoded/". $srcfile;
-
-		if (! -f $testfile) {
-			$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
-			print $srcfile ."  ". $path;
-			exit 1;
-		}
+	my $path = '/opt/crs/encoded/ifc2014/';
+	if ($props->{'EncodingProfile.Slug'} eq 'h264-split') {
+		my $dest = $base;
+		$dest =~ s/de-clean/commented/;
+		#print 'cp "' . $path . $vid . '-h264-hq-audio1.mp4" "' . $path . 'finished/audio1/' . $props->{'Encoding.Basename'}.'.mp4';
+		my $rc=system('cp "' . $path . $vid . '-h264-hq-audio1.mp4" "' . $path . 'finished/audio1/' . $dest .'.mp4"');
+		check_rc($rc, $tid);
+		$dest = $base;
+		$dest =~ s/de-clean-//;
+		$rc=system('cp "' . $path . $vid . '-h264-hq-audio2.mp4" "' . $path . 'finished/audio2/' . $dest.'.mp4"');
+		check_rc($rc, $tid);
+	} else {
+		my $dest = $base;
+		$dest =~ s/de-clean/multitrack/;
+		my $rc=system('cp "' . $path . $vid . '-h264-hq.mp4" "' . $path . 'finished/multi/' . $dest.'.mp4"');
+		check_rc($rc, $tid);
 	}
+	$tracker->setTicketDone($tid, 'Release Script: released successfully.');
+	# indicate short sleep to wrapper
+	exit(100);
+}
 
-	my $now = POSIX::strftime('%Y.%m.%d_%H:%M:%S', localtime());
-	$count = 0 unless defined($count) and $count =~ /^\d+$/;
-	$count++;
+sub check_rc {
+	my $rc_ = shift;
+	my $tid = shift;
+#        my %props = (
+#		'Release.Count' => $count,
+#		'Release.Datetime' => $now);
 
-	# releasing file
+	if($rc_==0) {
+		#$tracker->setTicketProperties($tid, \%props);
 
-		# TODO upload essence file
-		#print '/bin/bash /home/ecki/tracker/release2.sh ' . $srcfile . ' ' . $path;
-		$rc=system('cp ' . $testfile . ' ' . $path);
-
-	# write back to tracker
-	
-	if($rc==0)
-	{
-		$tracker->setTicketProperty($tid, 'Release.Count', $count);
-		$tracker->setTicketProperty($tid, 'Release.Datetime', $now);
-
-		$tracker->setTicketDone($tid, 'Release Script: released successfully.');
-	}
-	else
-	{
-		$tracker->setTicketProperty($tid, 'Release.Count', $count);
-		$tracker->setTicketProperty($tid, 'Release.Datetime', $now);
-
-		$tracker->setTicketFailed($tid, 'Release Script failed');
+	} else {
+		$tracker->setTicketFailed($tid, 'Release Script failed: '. $rc_);
+		die 'Ticket failed, exiting';
 	}
 }
 
