@@ -20,13 +20,13 @@ my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret
 my $ticket = $tracker->assignNextUnassignedForState('recording','finalizing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
-	print "currently no tickets for copying\n";
+	print "currently no tickets for finalizing\n";
 } else {
 	my $tid = $ticket->{id};
 	my $vid = $ticket->{fahrplan_id};
 	print "got ticket # $tid for event $vid\n";
 
-	my $props = $tracker->getTicketProperties($tid, 'Record.*');
+	my $props = $tracker->getTicketProperties($tid);
 	my $replacement = $props->{'Record.SourceReplacement'};
 	my $isRepaired = 0;
 	$isRepaired = 1 if defined($replacement) && $replacement ne '';
@@ -45,6 +45,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	# get metadata from fuse mount and store them in tracker
 	my ($in, $out, $intime, $outtime, $inseconds, $outseconds) = $fuse->getCutmarks($vid, $starttime);
 	my $diffseconds = $outseconds - $inseconds;
+#	$in =~ s/0+$//;
+#	$out =~ s/0+$//;
+#	$intime =~ s/0+$//;
+#	$outtime =~ s/0+$//;
+	$inseconds =~ s/\.0+$//;
+	$diffseconds =~ s/\.0+$//;
+	$outseconds =~ s/\.0+$//;
+	$inseconds =~ s/0+$// if ($inseconds =~ /\.[0-9]+/);
+	$diffseconds =~ s/0+$// if ($diffseconds =~ /\.[0-9]+/);
+	$outseconds =~ s/0+$// if ($outseconds =~ /\.[0-9]+/);
 	my %props = (
 		'Record.Cutin' => $in, 
 		'Record.Cutout' => $out,
