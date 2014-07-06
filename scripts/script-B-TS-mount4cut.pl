@@ -60,7 +60,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $endpadding = $props->{'Record.EndPadding'};
 
 	# transformation of metadata
-	$room =~ s/[^0-9]*//; # only the integer from room property
+	$room =~ s/\s+//g; # only the integer from room property
 	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 5 * 60 if (!defined($endpadding)); # default padding is 15 min.
 	$startpadding = 2 * 60 unless defined($startpadding); # default startpadding is 5 min.
@@ -73,7 +73,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	# prepare attributes for writeback
 
 	my %props2 = ();
-	$props2{'Record.Room'} = $room;
+	$props2{'Record.Room'} = lc($room);
 	$props2{'Record.Starttime'} = $paddedstart2;
 	$props2{'Record.Stoptime'} = $paddedend2;
 	$props2{'Record.DurationSeconds'} = $paddedlength;
@@ -90,7 +90,7 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 		if ($paddedstart =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) { # different syntax for TS-Capture
 			$paddedstart = "$1-$2-$3_$4-$5-$6";
 		}
-		$r = $fuse->doFuseMount($vid, $room.'-hd', $paddedstart, $paddedlength);
+		$r = $fuse->doFuseMount($vid, lc($room), $paddedstart, $paddedlength);
 	}
 
 	if (defined($r) && $r) {
