@@ -62,13 +62,14 @@ sub doFuseMount {
 	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 	$length = $self->defaultlength unless defined($length);
 
-	my $intro = $self->getIntro('.dv', $vid);
-	my $outro = $self->getOutro('.dv', $vid);
+	my $intro = $self->getIntro('dv', $vid);
+	my $outro = $self->getOutro('dv', $vid);
 	my $prefix = $self->{'Processing.Path.CaptureFilePrefix'};
 	$prefix = '' unless defined($prefix);
 	$prefix .= $room;
 
 	my $capdir = $self->getCapturePath($room);
+	return 0 unless defined($capdir);
         my $p = $self->getMountPath($vid);
 	print "creating mount path \"$p\"\n" if defined($self->{debug});
 	qx ( mkdir -p $p );
@@ -121,8 +122,8 @@ sub doFuseRepairMount {
 
 
 	my $length = $self->getSourceFileLengthInSeconds($replacementfullpath);
-	my $intro = $self->getIntro('.dv', $vid);
-	my $outro = $self->getOutro('.dv', $vid);
+	my $intro = $self->getIntro('dv', $vid);
+	my $outro = $self->getOutro('dv', $vid);
 
 	print "mounting FUSE: id=$vid source=$replacementfullpath length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
