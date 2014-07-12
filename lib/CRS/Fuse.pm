@@ -113,7 +113,7 @@ sub getCapturePath {
 	my $base = $self->{'Processing.Path.Capture'};
 	if (! -e $base && ! -d $base) {
 		print STDERR "ERROR: Processing.Path.Capture seems to be totally wrong!\n";
-		die;
+		return;
 	}
 	if (-e -d "$base/$room") {
 		return "$base/$room";
@@ -162,9 +162,8 @@ sub getOutro {
 }
 
 sub getCustomFile {
-	my ($self, $start, $name, $suffix, $id) = @_;
+	my ($self, $dir, $name, $suffix, $id) = @_;
 	$suffix = '' unless defined ($suffix);
-	my $dir = $self->{'Processing.Path.Intros'};
 	return unless defined $dir;
 	
 	# Test if the property points to a valid location
