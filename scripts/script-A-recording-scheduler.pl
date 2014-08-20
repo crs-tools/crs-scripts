@@ -6,7 +6,6 @@ require C3TT::Client;
 
 use POSIX qw(strftime);
 use boolean;
-use Time::Piece;
 
 my $target_type = 'recording';
 my $target_state = 'recording';
@@ -16,11 +15,11 @@ my $startpadding = 300;
 my $endpadding = 900;
 
 # filter recording events
-print "my time base now: " . strftime('%F %T',gmtime(time)). "\n";
+print "my time base now: " . strftime('%FT%TZ',gmtime(time)). "\n";
 my $start_filter = {};
-$start_filter->{'Record.StartedBefore'} = strftime('%F %T', gmtime(time + $startpadding));
+$start_filter->{'Record.StartedBefore'} = strftime('%FT%TZ', gmtime(time + $startpadding));
 my $end_filter = {};
-$end_filter->{'Record.EndedBefore'} = strftime('%F %T', gmtime(time - $endpadding));
+$end_filter->{'Record.EndedBefore'} = strftime('%FT%TZ', gmtime(time - $endpadding));
 
 if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
 	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
@@ -47,13 +46,6 @@ while($tickets_left) {
 	}
 
     print "found ticket #" . $ticket->{id} . ". ";
-
-    if((Time::Piece->strptime($ticket->{time_end},'%Y-%m-%d %T')->epoch - time) + $endpadding < 0) {
-        print "event has already ended some time ago. set to recorded...\n";
-        $tracker->setTicketDone($ticket->{id});
-        print "set to $target_state. sleeping a second...\n";
-        sleep 1;
-    }
 }
 
 # find assigned tickets in state recording
