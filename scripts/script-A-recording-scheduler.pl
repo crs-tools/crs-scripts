@@ -15,11 +15,11 @@ my $startpadding = 300;
 my $endpadding = 900;
 
 # filter recording events
-print "my time base now: " . strftime('%FT%TZ',gmtime(time)). "\n";
+print "my time base now: " . strftime('%FT%T', gmtime(time)). "\n";
 my $start_filter = {};
-$start_filter->{'Record.StartedBefore'} = strftime('%FT%TZ', gmtime(time + $startpadding));
+$start_filter->{'Record.StartedBefore'} = strftime('%FT%T', gmtime(time + $startpadding)); #TODO: add 'Z' to string once all trackers are DB-upgraded
 my $end_filter = {};
-$end_filter->{'Record.EndedBefore'} = strftime('%FT%TZ', gmtime(time - $endpadding));
+$end_filter->{'Record.EndedBefore'} = strftime('%FT%T', gmtime(time - $endpadding)); #TODO: add 'Z' to string once all trackers are DB-upgraded
 
 if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
 	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
