@@ -71,8 +71,8 @@ sub doFuseMount {
 	my $capdir = $self->getCapturePath($room);
 	return 0 unless defined($capdir);
         my $p = $self->getMountPath($vid);
-	print "creating mount path \"$p\"\n" if defined($self->{debug});
-	qx ( mkdir -p $p );
+	print "creating mount path '$p'\n" if defined($self->{debug});
+	qx ( mkdir -p "$p" );
 
 	my $fusecmd = " $self->{binpath}/$self->{'fuse_binary'} p=\"${prefix}-\" c=\"$capdir\" st=\"$starttime\" ot=$length ";
 	# check existence of intro and outro
