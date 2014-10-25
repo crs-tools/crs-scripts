@@ -74,7 +74,7 @@ sub new {
     }
 
     # create remote handle
-    $self->{remote} = XML::RPC::Fast->new($self->{url}.'?group='.$self->{token}.'&hostname='.hostfqdn);
+    $self->{remote} = XML::RPC::Fast->new($self->{url}.'?group='.$self->{token}.'&hostname='.hostfqdn, ua => 'LWP', timeout => 30);
 
     bless $self;
 
