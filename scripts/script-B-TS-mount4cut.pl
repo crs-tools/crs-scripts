@@ -16,7 +16,7 @@ if (!defined($token)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
+my $tracker = C3TT::Client->new();
 #$tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 
