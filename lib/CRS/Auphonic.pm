@@ -17,18 +17,6 @@ sub new {
 }
 
 # static method
-sub getProductionInfoFromFile {
-	my $jsonfile = shift;
-	open INPUT, '<'.$jsonfile or die $!;
-	undef $/;
-	my $content = <INPUT>;
-	close INPUT;
-	$/ = "\n";
-
-	return getProductionInfoFromJSON($content);
-}
-
-# static method
 sub getProductionInfoFromJSON {
 	my $content = shift;
 	my $decoded = decode_json($content);
@@ -44,15 +32,42 @@ sub getProductionInfoFromJSON {
 	return %ret;
 }
 
+sub getUUID {
+	my $self = shift;
+	return $self->{uuid};
+}
+
+sub isFinished {
+	my $self = shift;
+	my %info = $self->getProductionInfo();
+	if ($info{'status'} eq '3') {
+		return 1;
+	}
+	return 0;
+}
+
 sub getProductionInfo {
 	my $self = shift;
-	return getProductionInfoFromJSON($self->getProductionJSON());
+	my $json = undef;
+	if (defined($self->{jsontime}) and $self->{jsontime} > (time() - 60)) {
+		$json = $self->{json};
+	} else {
+		$self->{json} = undef;
+		$self->{jsontime} = undef;
+		$json = $self->getProductionJSON();
+		if (defined($json) and defined($self->{uuid})) {
+			$self->{json} = $json;
+			$self->{jsontime} = time;
+		}
+	}
+	return getProductionInfoFromJSON($json);
 }
 
 sub getProductionJSON {
 	my $self = shift;
 	my $uuid = $self->{uuid};
 	my $authtoken = $self->{authtoken};
+	return undef unless defined($uuid) and defined($authtoken);
 	my $url = 'https://auphonic.com/api/production/'.$uuid.'.json?bearer_token=' . $authtoken;
         my $curl = WWW::Curl::Easy->new;
 
@@ -108,14 +123,13 @@ sub startProduction {
 
 sub downloadResult {
 	my $self = shift;
-	my $path = shift;
+	my $dest = shift;
 
-	my %info = $self->getProductionInfo();
-	if ($info{'status'} ne '3') {
+	if (!$self->isFinished()) {
 		print STDERR "production is not finished!\n";
-		return;
+		return 0;
 	}
-	my $dest = $path . '/' . $info{'filename'};
+	my %info = $self->getProductionInfo();
 	my $url = $info{'url'} . "?bearer_token=" . $self->{authtoken};
 
         my $curl = WWW::Curl::Easy->new;
@@ -130,9 +144,10 @@ sub downloadResult {
 	close OUTPUT;
 	my $httpcode = $curl->getinfo(CURLINFO_HTTP_CODE);
 	if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
-		return;
+		return 1;
 	}
 	print STDERR "Download production returns $httpcode and error is '" .$curl->errbuf . "'\n";
+	return 0;
 }
 
 1;

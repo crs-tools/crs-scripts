@@ -3,6 +3,7 @@
 require CRS::Auphonic;
 require C3TT::Client;
 require boolean;
+use File::Basename qw(dirname);
 use Data::Dumper;
 
 my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
@@ -33,15 +34,19 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $auphonicToken = $props->{'Processing.Auphonic.Token'};
 	my $auphonicPreset = $props->{'Processing.Auphonic.Preset'};
 	my $audio1 = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.'-audio1.ts';
-	my $uuid1 = CRS::Auphonic::startProduction($auphonicToken, $auphonicPreset, $audio1, $props->{'Project.Slug'}.'-'.$vid.'-audio1') or die $!;
+	my $auphonic = CRS::Auphonic->new($auphonicToken);
 
-	if (!defined($uuid1)) {
-		print STDERR "Starting production for audio track1 failed!\n";
-		$tracker->setTicketFailed($tid, "Starting production for audio track1 failed!");
+	print "Starting production for audio track 1\n";
+	my $auphonic_1 = $auphonic->startProduction($auphonicPreset, $audio1, $props->{'Project.Slug'}.'-'.$vid.'-audio1') or die $!;
+
+	if (!defined($auphonic_1)) {
+		print STDERR "Starting production for audio track 1 failed!\n";
+		$tracker->setTicketFailed($tid, "Starting production for audio track 1 failed!");
 		die;
 	}
-
-	print "Started production for audio track1 as '$uuid1'\n";
+	
+	my $uuid1 = $auphonic_1->getUUID();
+	print "Started production for audio track 1 as '$uuid1'\n";
 	my %props_new = (
 		'Processing.Auphonic.ProductionID1' => $uuid1,
 	);
@@ -50,13 +55,15 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $lang = $props->{'Record.Language'};
 	if ($lang =~ /^..-../) {
 		$audio2 = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.'-audio2.ts';
-		my $uuid2 = CRS::Auphonic::startProduction($auphonicToken, $auphonicPreset, $audio2, $props->{'Project.Slug'}.'-'.$vid.'-audio2') or die $!;
-		print "Started production for audio track2 as '$uuid2'\n";
-		if(!defined($uuid2)) {
-			$tracker->setTicketFailed($tid, "Starting production for audio track1 failed!");
+		print "Starting production for audio track 2\n";
+		my $auphonic_2 = $auphonic->startProduction($auphonicPreset, $audio2, $props->{'Project.Slug'}.'-'.$vid.'-audio2') or die $!;
+		if (!defined($auphonic_2)) {
+			$tracker->setTicketFailed($tid, "Starting production for audio track 2 failed!");
 			die;
 		}
-		$props_new{'Processing.Auphonic.ProductionID2'} = $uuid2 if(defined($uuid2));
+		my $uuid2 = $auphonic_2->getUUID();
+		print "Started production for audio track 2 as '$uuid2'\n";
+		$props_new{'Processing.Auphonic.ProductionID2'} = $uuid2;
 	}
 	$tracker->setTicketProperties($tid, \%props_new);
 	# $tracker->setTicketDone($tid, 'Auphonic production started'); # TODO optional machen fuer anderes pipeline layout?
@@ -82,27 +89,38 @@ foreach (@$tickets) {
 	my $uuid1 = $props->{'Processing.Auphonic.ProductionID1'};
 	my $uuid2 = $props->{'Processing.Auphonic.ProductionID2'};
 
-	my $info2;
-	my %info1 = CRS::Auphonic::getProductionInfo(CRS::Auphonic::getProductionJSON($uuid1, $auphonicToken));
-	if ($info1{'status'} ne '3') {
+	# poll production states
+	my $a1 = CRS::Auphonic->new($auphonicToken, $uuid1);
+	if (!$a1->isFinished()) {
 		print "production $uuid1 not done yet.. skipping\n";
 		next;
 	}
+	my $a2 = undef;
 	if (defined($uuid2)) {
-		%info2 = CRS::Auphonic::getProductionInfo(CRS::Auphonic::getProductionJSON($uuid1, $auphonicToken));
-		if ($info2{'status'} ne '3') {
+		$a2 = CRS::Auphonic->new($auphonicToken, $uuid2);
+		if (!$a2->isFinished()) {
 			print "production $uuid2 not done yet.. skipping\n";
 			next;
 		}
 	}
 
-#	CRS::Auphonic::downloadResult(%info1, $props->{'Processing.Path.Tmp'});
-	CRS::Auphonic::downloadResult($uuid1, $auphonicToken, $props->{'Processing.Path.Tmp'});
+	# download audio files
+	my $dest1 = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.'-audio1-auphonic.m4a';
+	my $dest2 = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.'-audio2-auphonic.m4a';
+
+	print "downloading audio track 1 from Auphonic... to $dest1\n";
+	if (!$a1->downloadResult($dest1)) {
+		$tracker->setTicketFailed($tid, 'download of audio track 1 from auphonic failed!');
+	}
 	if (defined($uuid2)) {
-#		CRS::Auphonic::downloadResult(%info2, $props->{'Processing.Path.Tmp'});
-		CRS::Auphonic::downloadResult($uuid2, $auphonicToken, $props->{'Processing.Path.Tmp'});
+		print "downloading audio track 2 from Auphonic... to $dest2\n";
+		if (!$a2->downloadResult($dest2)) {
+			$tracker->setTicketFailed($tid, 'download of audio track 2 from auphonic failed!');
+		}
 	}
 
+	# remux via encoding profile job of type "remux"
+	print "remuxing audio tracks...\n";
 	my $jobfile = $tracker->getJobFile($tid);
 	my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'.xml';
 	open(my $file, ">", $jobfilePath) or die $!;
@@ -116,6 +134,8 @@ foreach (@$tickets) {
 		die;
 	}
 
+	my $perlDir = dirname($perlPath);
+	chdir $perlDir;
 	$output = qx ( perl "$perlPath" -t remux "$jobfilePath" );
 	if ($?) {
 		$tracker->setTicketFailed($tid, "remuxing failed! Status: $? Output: '$output'");
