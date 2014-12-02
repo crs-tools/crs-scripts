@@ -1,11 +1,22 @@
 package CRS::Auphonic;
 
+use strict;
+use warnings;
+
 use WWW::Curl::Easy;
 use WWW::Curl::Form;
 use JSON qw( decode_json );
-use File::Fetch;
-use Data::Dumper;
 
+sub new {
+	shift;
+	my $self;
+	$self->{authtoken} = shift;
+	$self->{uuid} = shift;
+	bless $self;
+	return $self;
+}
+
+# static method
 sub getProductionInfoFromFile {
 	my $jsonfile = shift;
 	open INPUT, '<'.$jsonfile or die $!;
@@ -14,30 +25,34 @@ sub getProductionInfoFromFile {
 	close INPUT;
 	$/ = "\n";
 
-	return getProductionInfo($content);
+	return getProductionInfoFromJSON($content);
 }
 
-sub getProductionInfo {
+# static method
+sub getProductionInfoFromJSON {
 	my $content = shift;
-#print "\n----\n".$content."\n-----\n";
 	my $decoded = decode_json($content);
 	my %ret;
 	$ret{'uuid'} =  $decoded->{'data'}{'uuid'};
 	$ret{'status'} =  $decoded->{'data'}{'status'};
 	my $files = $decoded->{'data'}{'output_files'};
-	$tmp = pop(@$files);
+	my $tmp = pop(@$files);
 	if (defined($tmp)) {
 		$ret{'url'} =  $tmp->{'download_url'};
 		$ret{'filename'} =  $tmp->{'filename'};
 	}
-#print $ret{'uuid'} . "   " . $ret{'status'} . "  " . $ret{'url'} . "  " . $ret{'filename'} . "\n\n";
-#print Dumper($tmp); 
 	return %ret;
 }
 
+sub getProductionInfo {
+	my $self = shift;
+	return getProductionInfoFromJSON($self->getProductionJSON());
+}
+
 sub getProductionJSON {
-	my $uuid = shift;
-	my $authtoken = shift;
+	my $self = shift;
+	my $uuid = $self->{uuid};
+	my $authtoken = $self->{authtoken};
 	my $url = 'https://auphonic.com/api/production/'.$uuid.'.json?bearer_token=' . $authtoken;
         my $curl = WWW::Curl::Easy->new;
 
@@ -57,48 +72,67 @@ sub getProductionJSON {
 }
 
 sub startProduction {
-	my $authtoken = shift;
+	my $self = shift;
 	my $preset = shift;
 	my $file = shift;
 	my $title = shift;
 	my $url = 'https://auphonic.com/api/simple/productions.json';
-        my $curl = WWW::Curl::Easy->new;
 
-        $curl->setopt(WWW::Curl::Easy::CURLOPT_HEADER,1);
-	$curl->setopt(WWW::Curl::Easy::CURLOPT_HTTPHEADER(), ['Authentication: Bearer ' . $authtoken]);
-	$curl->setopt(WWW::Curl::Easy::CURLOPT_POST(), 1);
+	my $curl = WWW::Curl::Easy->new;
+        $curl->setopt(WWW::Curl::Easy::CURLOPT_HEADER, 0);
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_HTTPHEADER(), ['Authorization: Bearer ' . $self->{authtoken}]);
         $curl->setopt(WWW::Curl::Easy::CURLOPT_URL, $url);
 
-	my $request = "preset=$preset&action=start&input_file=\@$file&title=$title";
-	$curl->setopt(WWW::Curl::Easy::CURLOPT_POSTFIELDS(), $request);
+	my $form = WWW::Curl::Form->new();
+	$form->formadd('preset', $preset);
+	$form->formadd('action', 'start');
+	$form->formadd('title', $title);
+	$form->formaddfile($file, 'input_file', 'multipart/form-data');
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_HTTPPOST(), $form);
 
         my $body;
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_WRITEDATA,\$body);
 	my $retcode = $curl->perform;
-	if ($retcode == 0) {
-		my $info = getProductionInfo($body);
-		return $info{'uuid'};
+	my $httpcode = $curl->getinfo(CURLINFO_HTTP_CODE);
+
+	if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
+		my %info = getProductionInfoFromJSON($body);
+		my $ret = CRS::Auphonic->new($self->{authtoken}, $info{'uuid'});
+		return $ret;
 	}
-	my $response_code = $curl->getinfo(WWW::Curl::Easy::CURLINFO_HTTP_CODE);
-	print STDERR "Start production returns $response_code\n";
+
+	print STDERR "Start production returns $httpcode and error is '" .$curl->errbuf . "'\n";
+	return undef;
 }
 
 
 sub downloadResult {
-	my $uuid = shift;
-	my $authtoken = shift;
+	my $self = shift;
 	my $path = shift;
 
-	my %info = CRS::Auphonic::getProductionInfo(CRS::Auphonic::getProductionJSON($uuid, $authtoken));
+	my %info = $self->getProductionInfo();
+	if ($info{'status'} ne '3') {
+		print STDERR "production is not finished!\n";
+		return;
+	}
 	my $dest = $path . '/' . $info{'filename'};
-	my $url = $info{'url'} . "?bearer_token=" . $authtoken;
+	my $url = $info{'url'} . "?bearer_token=" . $self->{authtoken};
 
-print "downloading $url to $path \n";
-	my $ff = File::Fetch->new('uri' => $url);
-	my $where = $ff->fetch('to' => $path);
-	print $ff->error() . "\n";
-	print STDERR "download: " . $where ."\n";
+        my $curl = WWW::Curl::Easy->new;
+        $curl->setopt(WWW::Curl::Easy::CURLOPT_HEADER, 0);
+        $curl->setopt(WWW::Curl::Easy::CURLOPT_URL, $url);
+	$curl->setopt(CURLOPT_CONNECTTIMEOUT, 5);
+	$curl->setopt(CURLOPT_TIMEOUT, 60);
 
+	open OUTPUT, ">$dest" or die "Cannot open '$dest'!\n";
+	$curl->setopt(CURLOPT_FILE, \*OUTPUT);
+	my $retcode = $curl->perform;
+	close OUTPUT;
+	my $httpcode = $curl->getinfo(CURLINFO_HTTP_CODE);
+	if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
+		return;
+	}
+	print STDERR "Download production returns $httpcode and error is '" .$curl->errbuf . "'\n";
 }
 
 1;
