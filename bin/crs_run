@@ -5,7 +5,7 @@ if [ -z "${CRS_SECRET}" ]; then
     exit 1;
 fi
 
-SCRIPT_NAME=$1
+SCRIPT_NAME=`basename "$1"`
 if [ -z "${SCRIPT_NAME}" ]; then 
     echo "no script given."
     echo "usage: `basename $0` <script> [<sleeptime>]"
