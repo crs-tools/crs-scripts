@@ -19,6 +19,8 @@ fi
 
 # short sleep time after work has done
 SLEEP_TIME_SHORT=2
+# long sleep time if no project assigned
+SLEEP_TIME_LONG=300
 
 # only run once per host
 mkdir -p /tmp/crs
@@ -71,8 +73,12 @@ while true; do
     if [ $? -eq 100 ]; then
         echo "------- waiting (short) ${SLEEP_TIME_SHORT}s ($(date +%X)) ---------"
         sleep ${SLEEP_TIME_SHORT}
-    else
-        echo "------- waiting ${SLEEP_TIME}s ($(date +%X)) ---------"
-        sleep ${SLEEP_TIME}
+    else if [ $? -eq 200 ]; then
+            echo "------- waiting (long) ${SLEEP_TIME_LONG}s ($(date +%X)) ---------"
+            sleep ${SLEEP_TIME_LONG}
+        else
+            echo "------- waiting ${SLEEP_TIME}s ($(date +%X)) ---------"
+            sleep ${SLEEP_TIME}
+        fi
     fi
 done
