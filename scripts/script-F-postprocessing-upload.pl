@@ -30,7 +30,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$tracker->setTicketFailed($tid, 'Encoding postprocessor: srcfile '.$srcfile.' not found!');
 	}
 	print " OK\n";
-	my $destfile = $props->{'Processing.Path.PreRelease'} . '/' . $props->{'Fahrplan.ID'} . "-" . 
+	my $destfile = $props->{'Publishing.UploadTarget'} . '/' . $props->{'Fahrplan.ID'} . "-" . 
 		$props->{'EncodingProfile.Slug'} . '.' . $props->{'EncodingProfile.Extension'};
 	my $opts = $props->{'Processing.Postprocessing.Options'};
 	$opts = "" unless defined ($opts);
