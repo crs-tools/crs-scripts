@@ -141,6 +141,7 @@ foreach (@$tickets) {
 	# remux via encoding profile job of type "remux"
 	print "remuxing audio tracks...\n";
 	my $jobfile = $tracker->getJobFile($tid);
+	utf8::encode($jobfile);
 	my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'.xml';
 
 	# download jobfile into a physical file
