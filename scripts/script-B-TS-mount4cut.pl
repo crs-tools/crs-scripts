@@ -17,7 +17,6 @@ if (!defined($token)) {
 }
 
 my $tracker = C3TT::Client->new();
-#$tracker->setCurrentProject($project);
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
