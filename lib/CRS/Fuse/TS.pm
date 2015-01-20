@@ -80,7 +80,7 @@ sub doFuseMount {
 	print "creating mount path \"$p\"\n" if defined($self->{debug});
 	qx ( mkdir -p "$p" );
 	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"$prefix-\" c=\"$capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
-	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
+	$fusecmd .= " -oallow_other,use_ino \"$p\" ";
 
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
 	qx ( $fusecmd );
