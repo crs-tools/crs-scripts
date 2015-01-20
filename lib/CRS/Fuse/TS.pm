@@ -80,6 +80,8 @@ sub doFuseMount {
 	print "creating mount path \"$p\"\n" if defined($self->{debug});
 	qx ( mkdir -p "$p" );
 	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"$prefix-\" c=\"$capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
+	$fusecmd .= " winpath=\"" . $self->{'Processing.Path.FuseWindowsPrefix'} . '" ' if (defined($self->{'Processing.Path.FuseWindowsPrefix'}));
+	$fusecmd .= " stripslashes=" . $self->{'Processing.Path.FuseWindowsStripSlashes'} . ' ' if (defined($self->{'Processing.Path.FuseWindowsStripSlashes'}));
 	$fusecmd .= " -oallow_other,use_ino \"$p\" ";
 
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
