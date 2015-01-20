@@ -52,55 +52,54 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	if (!defined($room) || !defined($startdate) 
 		|| !defined($duration) || !defined($starttime)) {
 		print STDERR "NOT ENOUGH METADATA!\n";
-		$tracker->setTicketFailed($tid, 'Not enough metadata');
+		$tracker->setTicketFailed($tid, 
+			"Not enough metadata!\n".
+			"Make sure that the ticket has following attributes:\n".
+			"-Fahrplan.Room\n-Fahrplan.Date\n-Fahrplan.Duration\n-Fahrplan.Start");
 		die("NOT ENOUGH METADATA!\n");
 	}
 	my $startpadding = $props->{'Record.StartPadding'};
 	my $endpadding = $props->{'Record.EndPadding'};
 
 	# transformation of metadata
-	$room =~ s/\s+//g; # only the integer from room property
+
 	my $start = $startdate . '-' . $starttime; # put date and time together
-	$endpadding = 5 * 60 if (!defined($endpadding)); # default padding is 15 min.
-	$startpadding = 2 * 60 unless defined($startpadding); # default startpadding is 5 min.
-	my ($paddedstart, $paddedend, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
-	my $paddedstart2 = $paddedstart;
-	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
-	my $paddedend2 = $paddedend;
-	$paddedend2 =~ s/[\._-]/-/g; # different syntax for Record.Stoptime
+	$endpadding = 5 * 60 if (!defined($endpadding)); # default padding is 5 min.
+	$startpadding = 5 * 60 unless defined($startpadding); # default startpadding is 5 min.
+	my ($paddedstart, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
+
+	# now try to create the mount
+
+	my ($r, $error, $cmd);
+	if ($isRepaired) {
+		print "Creating repair mount with source '$replacement'\n";
+		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $replacement);
+	} else {
+		if (defined($room)) {
+			$room =~ s/\ +//g;
+			$room = lc($room);
+		}
+		($r, $error, $cmd) = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
+	}
 
 	# prepare attributes for writeback
 
 	my %props2 = ();
-	$props2{'Record.Room'} = lc($room);
-	$props2{'Record.Starttime'} = $paddedstart2;
-	$props2{'Record.Stoptime'} = $paddedend2;
+	$props2{'Record.Room'} = $room if (defined($room));
 	$props2{'Record.DurationSeconds'} = $paddedlength;
 	$props2{'Record.DurationFrames'} = $paddedlength * 25;
 	$props2{'Record.EndPadding'} = $endpadding;
-
-	# now try to create the mount
-
-	my $r = 1;
-	if ($isRepaired == 1) {
-		print "Creating repair mount...\n";
-		$r = $fuse->doFuseRepairMount($vid, $replacement);
-	} else {
-		if ($paddedstart =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) { # different syntax for TS-Capture
-			$paddedstart = "$1-$2-$3_$4-$5-$6";
-		}
-		$r = $fuse->doFuseMount($vid, lc($room), $paddedstart, $paddedlength);
-	}
+	$props2{'Record.MountCmd'} = $cmd;
 
 	if (defined($r) && $r) {
 		$tracker->setTicketProperties($tid, \%props2); # when successful, do actually write back properties
 		print "FUSE mount created successfully.\n";
-		$tracker->setTicketDone($tid, 'Mount4cut: FUSE mount created successfully.');
+		$tracker->setTicketDone($tid, "Mount4cut: FUSE mount created successfully.\n" . $cmd . "\n" . $error);
 		# indicate short sleep to wrapper script
 		exit(100);
 	} else {
 		print "Mount4cut: ERROR: could not create FUSE mount!\n";
-		$tracker->setTicketFailed($tid, 'Mount4cut: ERROR: could not create FUSE mount!');
+		$tracker->setTicketFailed($tid, "Mount4cut: ERROR: could not create FUSE mount!\n" . $cmd . "\n" . $error);
 	}
 } else {
 	print "no tickets currently recorded.\n";

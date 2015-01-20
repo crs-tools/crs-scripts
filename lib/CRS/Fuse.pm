@@ -40,8 +40,8 @@ sub new {
 # start has syntax YYYY-MM-DD-hh:mm
 # duration has syntax hh:mm
 # paddings are given in seconds
-# returns ($paddedstart, $paddedend, $paddedlength)
-# with paddedstart and paddedend with syntax YYYY.MM.DD-HH_MM_SS,
+# returns ($paddedstart, $paddedlength)
+# with paddedstart in syntax YYYY.MM.DD-HH_MM_SS,
 # paddedlength in seconds
 sub getPaddedTimes {
 	my ($start, $duration, $startpadding, $endpadding, undef) = @_;
@@ -62,25 +62,33 @@ sub getPaddedTimes {
 		print STDERR "start parameter has incorrect format!\n";
 		return undef;
 	}
-	my $enddatetime = $startdatetime->clone();
 	$startdatetime->add('seconds' => -$startpadding) if (defined($startpadding) and $startpadding =~ /^-?[0-9]+$/);
 	my $paddedstart = $startdatetime->ymd('.') . '-' . $startdatetime->hms('_');
 
+	my $paddedlength = getPaddedDuration($duration, $startpadding, $endpadding);
+
+	return ($paddedstart, $paddedlength);
+}
+
+# duration has syntax hh:mm or hh:mm:ss
+# paddings are given in seconds
+# returns $paddedlength in seconds
+sub getPaddedDuration {
+	my ($duration, $startpadding, $endpadding, undef) = @_;
+	$startpadding = 0 unless defined($startpadding);
+	$endpadding = 0 unless defined($endpadding);
+	print "getPaddedTimes ($duration, $startpadding, $endpadding)\n" ;
+
 	my $durationseconds = undef;
-	if ($duration =~ /(\d+):(\d+)/) {
+	if ($duration =~ /^(\d+):(\d+)$/) {
 		$durationseconds = (($1 * 60) + $2) * 60;
+	} elsif ($duration =~ /^(\d+):(\d+):(\d+)$/) {
+		$durationseconds = ((($1 * 60) + $2) * 60) + $3;
 	} else {
 		print STDERR "duration has wrong format!\n";
 		return undef;
 	}
-
-	$enddatetime->add('seconds' => $durationseconds);
-	$enddatetime->add('seconds' => $endpadding) if (defined($endpadding) and $endpadding =~ /^-?[0-9]+$/);
-	my $paddedend = $enddatetime->ymd('.') . '-' . $enddatetime->hms('_');
-	my $paddedlength = ($enddatetime->epoch()) - ($startdatetime->epoch());
-
-#	print "getPaddedTimes returns ($paddedstart, $paddedend, $paddedlength)\n" if defined($self->{'debug'});
-	return ($paddedstart, $paddedend, $paddedlength);
+	return ($durationseconds + $startpadding + $endpadding);
 }
 
 sub getFuseMounts {
@@ -102,8 +110,8 @@ sub getMountPath {
 	return unless defined($vid);
 	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $self->{'Processing.Path.Raw'};
 	my $base = $self->{'Processing.Path.Raw'};
-	if (defined($self->{'Meta.Acronym'}) && defined($self->{'Fahrplan.Room'})) {
-		return $base . '/' . $self->{'Meta.Acronym'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
+	if (defined($self->{'Project.Slug'}) && defined($self->{'Fahrplan.Room'})) {
+		return $base . '/' . $self->{'Project.Slug'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
 	}
 	return "$base/$vid";
 }

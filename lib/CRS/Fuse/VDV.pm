@@ -70,9 +70,10 @@ sub doFuseMount {
 
 	my $capdir = $self->getCapturePath($room);
 	return 0 unless defined($capdir);
-        my $p = $self->getMountPath($vid);
-	print "creating mount path '$p'\n" if defined($self->{debug});
-	qx ( mkdir -p "$p" );
+
+	my $p = $self->getMountPath($vid);
+	print "creating mount path \"$p\"\n" if defined($self->{debug});
+	my $log = join "\n", qx ( mkdir -p "$p" 2>&1);
 
 	my $fusecmd = " $self->{binpath}/$self->{'fuse_binary'} p=\"${prefix}-\" c=\"$capdir\" st=\"$starttime\" ot=$length ";
 	# check existence of intro and outro
@@ -84,8 +85,8 @@ sub doFuseMount {
 	}
 	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
-	qx ( $fusecmd );
-	return $self->isVIDmounted($vid);
+	$log .= join "\n", qx ( $fusecmd 2>&1 );
+	return ($self->isVIDmounted($vid), $log, $fusecmd);
 }
 
 sub doFuseRepairMount {
@@ -127,7 +128,7 @@ sub doFuseRepairMount {
 
 	print "mounting FUSE: id=$vid source=$replacementfullpath length=$length\n" if defined($self->{debug});
         my $p = $self->getMountPath($vid);
-	qx ( mkdir -p "$p" );
+	my $log = join "\n", qx ( mkdir -p "$p" 2>&1 );
 	my $fusecmd = $self->{binpath} . '/' . $self->{'fuse_binary'} . " st=\"$replacementfilename\" c=\"$replacementfulldir\" ot=$length ";
 	# check existence of intro and outro
 	if (defined($intro) && -e $intro ) {
@@ -138,25 +139,24 @@ sub doFuseRepairMount {
 	}
 	$fusecmd .= " -s -oallow_other,use_ino \"$p\" ";
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
-	qx ( $fusecmd );
-	return $self->isVIDmounted($vid);
+	$log .= join "\n", qx ( $fusecmd 2>&1 );
+	return ($self->isVIDmounted($vid), $log, $fusecmd);
 }
 
 sub getCutmarks {
-	my ($self,$vid, $rawstarttime, undef) = @_;
+	my ($self,$vid, undef) = @_;
 	return undef unless defined($vid);
 	return undef unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
-	print "getting mark IN of event $vid" if defined($self->{debug});
+	print "getting mark IN of event $vid: " if defined($self->{debug});
 	my $i = qx ( cat "$p/inframe" );
 	chop($i);
-	print ": $i\ngetting mark OUT of event $vid" if defined($self->{debug});
+	print "$i\ngetting mark OUT of event $vid: " if defined($self->{debug});
 	my $o = qx ( cat "$p/outframe" );
 	chop($o);
-	print ": $o\n" if defined($self->{debug});
+	print "$o\n" if defined($self->{debug});
 
-	my ($start, $end, undef) = CRS::Fuse::getPaddedTimes ($rawstarttime, '00:00', round ($i / -25), round ($o / 25));
-	return ($i, $o, $start, $end);
+	return ($i, $o, ($i / $self->{fps}), ($o / $self->{fps}));
 }
 
 1;

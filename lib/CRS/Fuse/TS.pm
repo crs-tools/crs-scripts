@@ -38,7 +38,6 @@ sub getSourceFileLengthInSeconds {
 sub checkCut {
 	my ($self, $vid) = @_;
 	return 0 unless defined($vid);
-	#return 0 unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($self->{debug});
 	my $t = qx ( cat "$p/inframe" );
@@ -60,6 +59,10 @@ sub doFuseMount {
 	my ($self, $vid, $room, $starttime, $length) = @_;
 	
 	return unless defined($starttime);
+	if ($starttime =~ /^([0-9]{4}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})/) {
+		$starttime = "$1-$2-$3_$4-$5-$6";
+	}
+
 	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 	my $files;
 	if (defined($length)) {
@@ -78,15 +81,15 @@ sub doFuseMount {
 	my $p = $self->getMountPath($vid);
 	return 0 unless defined($p);
 	print "creating mount path \"$p\"\n" if defined($self->{debug});
-	qx ( mkdir -p "$p" );
+	my $log = join "\n", qx ( mkdir -p "$p" 2>&1 );
 	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"$prefix-\" c=\"$capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
 	$fusecmd .= " winpath=\"" . $self->{'Processing.Path.FuseWindowsPrefix'} . '" ' if (defined($self->{'Processing.Path.FuseWindowsPrefix'}));
 	$fusecmd .= " stripslashes=" . $self->{'Processing.Path.FuseWindowsStripSlashes'} . ' ' if (defined($self->{'Processing.Path.FuseWindowsStripSlashes'}));
 	$fusecmd .= " -oallow_other,use_ino \"$p\" ";
 
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
-	qx ( $fusecmd );
-	return $self->isVIDmounted($vid);
+	$log .= join "\n", qx ( $fusecmd 2>&1 );
+	return ($self->isVIDmounted($vid), $log, $fusecmd);
 }
 
 sub doFuseRepairMount {
@@ -104,15 +107,14 @@ sub doFuseRepairMount {
 	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	return 0 unless defined($p);
-	qx ( mkdir -p \"$p\" );
-	qx ( ln -s "$replacementpath" \"$p/uncut.ts\" );
-	return 1;
+	my $log = qx ( mkdir -p \"$p\" );
+	$log .= join "\n", qx ( ln -s "$replacementpath" \"$p/uncut.ts\" 2>&1 );
+	return (1, $log, "ln -s \"$replacementpath\" \"$p/uncut.ts\" 2>&1");
 }
 
 sub getCutmarks {
-	my ($self, $vid, $rawstarttime, undef) = @_;
+	my ($self, $vid, undef) = @_;
 	return undef unless defined($vid);
-	#return undef unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "getting mark IN of event $vid\n" if defined($self->{debug});
 	my $i = qx ( cat \"$p/inframe\" );
@@ -127,8 +129,7 @@ sub getCutmarks {
 	my $ot = qx ( cat \"$p/outtime\" );
 	chop($ot);
 
-	my ($start, $end, undef) = CRS::Fuse::getPaddedTimes($rawstarttime, '00:00', round ($i / -$self->{fps}), round ($o / $self->{fps}));
-	return ($i, $o, $start, $end, $it, $ot);
+	return ($i, $o, $it, $ot);
 }
 
 1;

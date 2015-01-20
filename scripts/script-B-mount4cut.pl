@@ -2,29 +2,31 @@
 
 use strict;
 require CRS::Fuse::VDV;
+require CRS::Fuse::TS;
 require C3TT::Client;
 require boolean;
 
 my $tracker = C3TT::Client->new();
 
-my $ticket;
-if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
-	my $filter = {};
-	$filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-	$ticket = $tracker->assignNextUnassignedForState('recording', 'preparing', $filter);
-} else {
-	$ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
-}
+my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $tid = $ticket->{id};
+	my $props = $tracker->getTicketProperties($tid);
 	my $vid = $ticket->{fahrplan_id};
+	$vid = $props->{'Fahrplan.ID'} if ($vid < 1);
 	print "got ticket # $tid for event $vid\n";
 
-	my $props = $tracker->getTicketProperties($tid);
-	my $fuse = CRS::Fuse::VDV->new($props);
+	my $container = $props->{'Record.Container'};
+	$container = 'DV' unless defined($container);
+
+	my $fuse;
+	if ($container eq 'DV') {
+		$fuse = CRS::Fuse::VDV->new($props);
+	} else {
+		$fuse = CRS::Fuse::TS->new($props);
+	}
 	my $mounted = CRS::Fuse::isVIDmounted($vid);
-	print "already mounted: $mounted\n";
 	if ($mounted) {
 		print " already mounted! unmounting... ";
 		$fuse->doFuseUnmount($vid);
@@ -39,14 +41,19 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	my $starttime = $props->{'Fahrplan.Start'};
 	my $duration = $props->{'Fahrplan.Duration'};
 	my $replacement = $props->{'Record.SourceReplacement'};
+
 	my $isRepaired = 0;
 	$isRepaired = 1 if defined($replacement) && $replacement ne '';
 
 	# check minimal metadata
 
-	if (!defined($startdate) || !defined($duration) || !defined($starttime)) {
+	if (!defined($room) || !defined($startdate) 
+		|| !defined($duration) || !defined($starttime)) {
 		print STDERR "NOT ENOUGH METADATA!\n";
-		$tracker->setTicketFailed($tid, 'Not enough metadata');
+		$tracker->setTicketFailed($tid, 
+			"Not enough metadata!\n".
+			"Make sure that the ticket has following attributes:\n".
+			"-Fahrplan.Room\n-Fahrplan.Date\n-Fahrplan.Duration\n-Fahrplan.Start");
 		die("NOT ENOUGH METADATA!\n");
 	}
 	my $startpadding = $props->{'Record.StartPadding'};
@@ -54,45 +61,43 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	# transformation of metadata
 
-#	$room =~ s/[^0-9Gg]*//; # only the integer from room property
-#	$room = lc($room);
 	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 15 * 60 if (!defined($endpadding)); # default padding is 15 min.
 	$startpadding = 15 * 60 unless defined($startpadding); # default startpadding is 15 min.
-	my ($paddedstart, $paddedend, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
-	my $paddedstart2 = $paddedstart;
-	$paddedstart2 =~ s/[\._-]/-/g; # different syntax for Record.Starttime
-	my $paddedend2 = $paddedend;
-	$paddedend2 =~ s/[\._-]/-/g; # different syntax for Record.Stoptime
+	my ($paddedstart, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
+
+	# now try to create the mount
+
+	my ($r, $error, $cmd);
+	if ($isRepaired) {
+		print "Creating repair mount with source '$replacement'\n";
+		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $replacement);
+	} else {
+		if (defined($room)) {
+			$room =~ s/\ +//g;
+			$room = lc($room);
+		}
+		($r, $error, $cmd) = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
+	}
 
 	# prepare attributes for writeback
 
 	my %props2 = ();
 	$props2{'Record.Room'} = $room if (defined($room));
-	$props2{'Record.Starttime'} = $paddedstart2;
-	$props2{'Record.Stoptime'} = $paddedend2;
 	$props2{'Record.DurationSeconds'} = $paddedlength;
 	$props2{'Record.DurationFrames'} = $paddedlength * 25;
 	$props2{'Record.EndPadding'} = $endpadding;
-
-	# now try to create the mount
-
-	my $r = 1;
-	if ($isRepaired) {
-		$r = $fuse->doFuseRepairMount($vid, $replacement);
-	} else {
-		$r = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
-	}
+	$props2{'Record.MountCmd'} = $cmd;
 
 	if (defined($r) && $r) {
 		$tracker->setTicketProperties($tid, \%props2); # when successful, do actually write back properties
 		print "FUSE mount created successfully.\n";
-		$tracker->setTicketDone($tid, 'Mount4cut: FUSE mount created successfully.');
-           # indicate short sleep to wrapper script
-           exit(100);
+		$tracker->setTicketDone($tid, "Mount4cut: FUSE mount created successfully.\n" . $cmd . "\n" . $error);
+		# indicate short sleep to wrapper script
+		exit(100);
 	} else {
 		print "Mount4cut: ERROR: could not create FUSE mount!\n";
-		$tracker->setTicketFailed($tid, 'Mount4cut: ERROR: could not create FUSE mount!');
+		$tracker->setTicketFailed($tid, "Mount4cut: ERROR: could not create FUSE mount!\n" . $cmd . "\n" . $error);
 	}
 } else {
 	print "no tickets currently recorded.\n";

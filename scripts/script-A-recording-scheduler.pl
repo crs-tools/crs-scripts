@@ -21,10 +21,6 @@ $start_filter->{'Record.StartedBefore'} = strftime('%FT%TZ', gmtime(time + $star
 my $end_filter = {};
 $end_filter->{'Record.EndedBefore'} = strftime('%FT%TZ', gmtime(time - $endpadding));
 
-if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
-	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-	$end_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-}
 #######################################
 
 $|=1;
@@ -35,7 +31,6 @@ my $tickets_left = 1;
 
 while($tickets_left) {
     print "querying for ticket with next state $target_state";
-    print " for room " . $ENV{'CRS_ROOM'} if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '');
     print " ...";
     my $ticket = $tracker->assignNextUnassignedForState($target_type, $target_state, $start_filter);
 	print "\n";
