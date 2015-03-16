@@ -100,7 +100,7 @@ sub doFuseRepairMount {
 	die "ERROR: no Processing.Path.Repair specified!\n" unless defined $self->{'Processing.Path.Repair'};
 	my $repairdir = $self->{'Processing.Path.Repair'};
 
-	my $replacementfullpath = "repairdir/$replacement";
+	my $replacementfullpath = "$repairdir/$replacement";
 	my $replacementfulldir = $repairdir;
 	my $replacementfilename = $replacement;
 	# support relative paths in replacement property
