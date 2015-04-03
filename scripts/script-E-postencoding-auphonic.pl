@@ -32,6 +32,24 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $vid = $props->{'Fahrplan.ID'};
 	print "got ticket # $tid for event $vid\n";
 
+	if (!($props->{'EncodingProfile.Slug'} eq 'hd')) {
+		# locate exmljob-filtered.pl by tracker property
+		my $perlPath = $props->{'Processing.Path.Exmljob'};
+		if (!defined($perlPath) || $perlPath eq '') {
+			print STDERR "Processing.Path.Exmljob is missing!";
+			sleep 5;
+			die;
+		}
+	
+		# execute exmljob-filtered.pl with the downloaded jobfile
+		my $perlDir = dirname($perlPath);
+		chdir $perlDir;
+		$output = qx ( perl "$perlPath" -t postencoding "$jobfilePath" );
+		if ($?) {
+			$tracker->setTicketFailed($tid, "postencoding failed! Status: $? Output: '$output'");
+			die;
+		}
+	}
 	# auphonic authentication via token - the token is stored as a project property in the tracker
 	my $auphonicToken = $props->{'Processing.Auphonic.Token'};
 
