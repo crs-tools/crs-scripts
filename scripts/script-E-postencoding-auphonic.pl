@@ -33,6 +33,15 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "got ticket # $tid for event $vid\n";
 
 	if (!($props->{'EncodingProfile.Slug'} eq 'hd')) {
+		my $jobfile = $tracker->getJobFile($tid);
+		utf8::encode($jobfile);
+		my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'-foo.xml';
+
+		# download jobfile into a physical file
+		open(my $file, ">", $jobfilePath) or die $!;
+		print $file "$jobfile";
+		close $file;
+
 		# locate exmljob-filtered.pl by tracker property
 		my $perlPath = $props->{'Processing.Path.Exmljob'};
 		if (!defined($perlPath) || $perlPath eq '') {
