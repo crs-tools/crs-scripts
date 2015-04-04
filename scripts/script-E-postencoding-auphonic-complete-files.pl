@@ -44,7 +44,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# upload audio-file to auphonic and start the production
 	print "Starting production for $vid\n";
-	my $auphonic_1 = $auphonic->startProduction($auphonicPreset, $audio1, $props->{'Project.Slug'}.'-'.$vid) or die $!;
+	my $auphonic_1 = $auphonic->startProduction($auphonicPreset, $file1, $props->{'Project.Slug'}.'-'.$vid) or die $!;
 
 	if (!defined($auphonic_1)) {
 		print STDERR "Starting production for $vid failed!\n";
