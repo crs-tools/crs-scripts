@@ -15,14 +15,9 @@ if (!defined($token)) {
 	exit 1;
 }
 
-my $filter = {};
-if (defined($ENV{'CRS_PROFILE'})) {
-	$filter->{'EncodingProfile.Slug'} = $ENV{'CRS_PROFILE'};
-}
-
 # fetch ticket ready to state postencoding, thus ready to be transmitted to auphonic
 my $tracker = C3TT::Client->new();
-my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding', $filter);
+my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postencoding\n";
@@ -31,6 +26,38 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $props = $tracker->getTicketProperties($tid);
 	my $vid = $props->{'Fahrplan.ID'};
 	print "got ticket # $tid for event $vid\n";
+
+	my $auphonicflag = 'no';
+	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
+
+	if ($auphonicflag ne 'yes') {
+		my $jobfile = $tracker->getJobFile($tid);
+		utf8::encode($jobfile);
+		my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'-foo.xml';
+
+		# download jobfile into a physical file
+		open(my $file, ">", $jobfilePath) or die $!;
+		print $file "$jobfile";
+		close $file;
+
+		# locate exmljob-filtered.pl by tracker property
+		my $perlPath = $props->{'Processing.Path.Exmljob'};
+		if (!defined($perlPath) || $perlPath eq '') {
+			print STDERR "Processing.Path.Exmljob is missing!";
+			sleep 5;
+			die;
+		}
+
+		# execute exmljob-filtered.pl with the downloaded jobfile
+		my $perlDir = dirname($perlPath);
+		chdir $perlDir;
+		$output = qx ( perl "$perlPath" -t postencoding "$jobfilePath" );
+		if ($?) {
+			$tracker->setTicketFailed($tid, "postencoding failed! Status: $? Output: '$output'");
+			die;
+		}
+		$tracker->setTicketDone($tid, 'postencoding executed successfully');
+	}
 
 	# auphonic authentication via token - the token is stored as a project property in the tracker
 	my $auphonicToken = $props->{'Processing.Auphonic.Token'};

@@ -15,14 +15,9 @@ if (!defined($token)) {
 	exit 1;
 }
 
-my $filter = {};
-if (defined($ENV{'CRS_PROFILE'})) {
-	$filter->{'EncodingProfile.Slug'} = $ENV{'CRS_PROFILE'};
-}
-
 # fetch ticket ready to state postencoding, thus ready to be transmitted to auphonic
 my $tracker = C3TT::Client->new();
-my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding', $filter);
+my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postencoding\n";
@@ -32,7 +27,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $vid = $props->{'Fahrplan.ID'};
 	print "got ticket # $tid for event $vid\n";
 
-	if (!($props->{'EncodingProfile.Slug'} eq 'hd')) {
+	my $auphonicflag = 'no';
+	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
+
+	if ($auphonicflag ne 'yes') {
 		my $jobfile = $tracker->getJobFile($tid);
 		utf8::encode($jobfile);
 		my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'-foo.xml';
