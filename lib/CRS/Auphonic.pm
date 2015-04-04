@@ -250,7 +250,7 @@ sub downloadResult {
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_HEADER, 0);
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_URL, $url);
 	$curl->setopt(CURLOPT_CONNECTTIMEOUT, 5);
-	$curl->setopt(CURLOPT_TIMEOUT, 60);
+	$curl->setopt(CURLOPT_TIMEOUT, 300);
 
 	# open output file
 	open OUTPUT, ">$dest" or die "Cannot open '$dest'!\n";
