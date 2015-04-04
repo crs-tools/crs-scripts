@@ -93,8 +93,7 @@ sub doFuseMount {
 }
 
 sub doFuseRepairMount {
-	my ($self, $vid) = @_;
-	my $replacement = shift;
+	my ($self, $vid, $replacement, undef) = @_;
 
 	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
 	return 0 unless defined($replacement);
