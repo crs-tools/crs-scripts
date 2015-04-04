@@ -57,6 +57,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			die;
 		}
 		$tracker->setTicketDone($tid, 'postencoding executed successfully');
+		exit 0;
 	}
 
 	# auphonic authentication via token - the token is stored as a project property in the tracker
@@ -93,7 +94,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 # query tickets that are in postencoding state and assigned to this worker
 print "querying for assigned ticket in state postencoding ...\n";
-my $tickets = $tracker->getAssignedForState('encoding', 'postencoding', $filter);
+my $tickets = $tracker->getAssignedForState('encoding', 'postencoding');
 
 if (!($tickets) || 0 == scalar(@$tickets)) {
 	print "no assigned tickets currently postencoding. exiting...\n";
