@@ -126,10 +126,10 @@ foreach (@$tickets) {
 	print "downloading file from Auphonic... to $dest1\n";
 	if (!$a1->downloadResult($dest1)) {
 		$tracker->setTicketFailed($tid, 'download of $vid from auphonic failed!');
+	} else {
+		# done
+		$tracker->setTicketDone($tid);
 	}
-
-	# done
-	$tracker->setTicketDone($tid);
 	print "sleeping a while...\n";
 	sleep 5;
 }
