@@ -57,6 +57,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			die;
 		}
 		$tracker->setTicketDone($tid, 'postencoding executed successfully');
+		exit 0;
 	}
 	# auphonic authentication via token - the token is stored as a project property in the tracker
 	my $auphonicToken = $props->{'Processing.Auphonic.Token'};
