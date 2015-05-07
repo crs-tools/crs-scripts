@@ -16,6 +16,10 @@ Generic usage
 
     my $auphonic = CRS::Auphonic->new('AbCdEfGhIj1234');
 
+Set speed limit for upload in kBytes/second
+
+    $auphonic->setSpeedLimit(2000);
+
 Start a production (returns new object)
 
     my $auphonic = $auphonic->startProduction($auphonicPreset, '/tmp/test.ogg', 'my first API production');
@@ -45,6 +49,11 @@ REST API of Auphonic.com.
 Create CRS::Auphonic object. 
 The authToken is mandatory for using the Auphonic API.
 The uuid is optional and should be given if the production already exists.
+
+=head2 setSpeedLimit($limit);
+
+Set a speed limit on the upload process (HTTP POST). The value given is
+taken as kilobytes per second.
 
 =head2 startProduction ($preset, $file, $title)
 
@@ -116,6 +125,11 @@ sub getProductionInfoFromJSON {
 		$ret{'filename'} =  $tmp->{'filename'};
 	}
 	return %ret;
+}
+
+sub setSpeedLimit {
+	my $self = shift;
+	$self->{limit} = shift;
 }
 
 sub getUUID {
@@ -199,6 +213,9 @@ sub startProduction {
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_HEADER, 0);
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_HTTPHEADER(), ['Authorization: Bearer ' . $self->{authtoken}]);
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_URL, $url);
+	if (defined($self->{limit})) {
+		$curl->setopt(WWW::Curl::Easy::CURLOPT_MAX_SEND_SPEED_LARGE, (0 + $self->{limit}) * 1024);
+	}
 
 	# construct & setup a html-like form set
 	my $form = WWW::Curl::Form->new();

@@ -70,6 +70,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $file1 = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.'.'.$props->{'EncodingProfile.Extension'};
 	my $auphonic = CRS::Auphonic->new($auphonicToken);
 
+	if (defined($props->{'Processing.Auphonic.SpeedLimit'})) {
+		$auphonic->setSpeedLimit($props->{'Processing.Auphonic.SpeedLimit'});
+	}
+
 	# upload audio-file to auphonic and start the production
 	print "Starting production for $vid\n";
 	my $auphonic_1 = $auphonic->startProduction($auphonicPreset, $file1, $props->{'Project.Slug'}.'-'.$vid) or die $!;
