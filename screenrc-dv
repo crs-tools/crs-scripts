@@ -17,8 +17,7 @@ screen -t D-encoding                 bash -c '. tracker-profile.sh; ./bin/crs_ru
 # legacy:
 #screen -t E-tagging                  bash -c '. tracker-profile.sh; ./bin/crs_run script-E-tagging.sh'
 
-#screen -t E-postencoding             bash -c '. tracker-profile.sh; ./bin/crs_run script-E-postencoding-auphonic.pl'
-screen -t E-postencoding             bash -c '. tracker-profile.sh; ./bin/crs_run script-E-postencoding-auphonic-complete-files.pl'
+screen -t E-postencoding             bash -c '. tracker-profile.sh; ./bin/crs_run script-E-postencoding-auphonic.pl'
 
 screen -t F-postprocessing           bash -c '. tracker-profile.sh; ./bin/crs_run script-F-postprocessing-upload.pl'
 
