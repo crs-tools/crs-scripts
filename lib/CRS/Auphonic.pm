@@ -107,6 +107,11 @@ sub new {
 	my $self;
 	$self->{authtoken} = shift;
 	$self->{uuid} = shift;
+
+	# just to be safe:
+	$self->{authtoken} =~ s/^\s+|\s+$//g ;
+	$self->{uuid} =~ s/^\s+|\s+$//g ;
+
 	bless $self;
 	return $self;
 }
@@ -206,6 +211,9 @@ sub startProduction {
 	my $preset = shift;
 	my $file = shift;
 	my $title = shift;
+
+	# just to be safe:
+	$preset =~ s/^\s+|\s+$//g ;
 
 	# construct & setup a curl-instance
 	my $url = 'https://auphonic.com/api/simple/productions.json';
