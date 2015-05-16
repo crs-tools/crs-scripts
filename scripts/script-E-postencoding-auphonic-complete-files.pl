@@ -29,6 +29,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $auphonicflag = 'no';
 	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
+	$auphonicflag = $props->{'Processing.Auphonic.Enable'} if (defined ($props->{'Processing.Auphonic.Enable'}) && $auphonicflag eq 'yes');
 
 	if ($auphonicflag ne 'yes') {
 		my $jobfile = $tracker->getJobFile($tid);
