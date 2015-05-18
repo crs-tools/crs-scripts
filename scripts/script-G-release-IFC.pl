@@ -1,22 +1,11 @@
 #!/usr/bin/perl -W
 
-#require fusevdv;
 require C3TT::Client;
+use POSIX qw(strftime);
 require boolean;
 use Data::Dumper;
 
-# Call this script with secret and project slug as parameter!
-
-my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
-
-if (!defined($token)) {
-	# print usage
-	print STDERR "Too few parameters given!\nUsage:\n\n";
-	print STDERR "./script-.... <secret> <token>\n\n";
-	exit 1;
-}
-# TODO URL from env
-my $tracker = C3TT::Client->new('http://tracker.fem-net.de/rpc', $token, $secret);
+my $tracker = C3TT::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding', 'releasing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
@@ -29,23 +18,24 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	#print Dumper($ticket);
 	#print Dumper($props);
 
-	my $base = $props->{'Encoding.Basename'};
-	
-	my $path = '/opt/crs/encoded/ifc2014/';
+	my $sourcepath = $props->{'Processing.Path.Output'};
+	$sourcepath .= '/' . $vid . '-' . $props->{'EncodingProfile.Slug'} . '.' . $props->{'EncodingProfile.Extension'};
+	my $destpath = $props->{'Releasing.Path'};
+	$destpath .= '/' . $props->{'EncodingProfile.Basename'} . '.' . $props->{'EncodingProfile.Extension'};
+
 	if ($props->{'EncodingProfile.Slug'} eq 'h264-split') {
+		my $base = $props->{'Encoding.Basename'};
 		my $dest = $base;
 		$dest =~ s/de-clean/commented/;
 		#print 'cp "' . $path . $vid . '-h264-hq-audio1.mp4" "' . $path . 'finished/audio1/' . $props->{'Encoding.Basename'}.'.mp4';
-		my $rc=system('cp "' . $path . $vid . '-h264-hq-audio1.mp4" "' . $path . 'finished/audio1/' . $dest .'.mp4"');
+		my $rc=system('mv "' . $path . $vid . '-h264-hq-audio1.mp4" "' . $path . 'finished/audio1/' . $dest .'.mp4"');
 		check_rc($rc, $tid);
 		$dest = $base;
 		$dest =~ s/de-clean-//;
-		$rc=system('cp "' . $path . $vid . '-h264-hq-audio2.mp4" "' . $path . 'finished/audio2/' . $dest.'.mp4"');
+		$rc=system('mv "' . $path . $vid . '-h264-hq-audio2.mp4" "' . $path . 'finished/audio2/' . $dest.'.mp4"');
 		check_rc($rc, $tid);
 	} else {
-		my $dest = $base;
-		$dest =~ s/de-clean/multitrack/;
-		my $rc=system('cp "' . $path . $vid . '-h264-hq.mp4" "' . $path . 'finished/multi/' . $dest.'.mp4"');
+		my $rc=system('cp "' . $sourcepath . '"  "' . $destpath.'"');
 		check_rc($rc, $tid);
 	}
 	$tracker->setTicketDone($tid, 'Release Script: released successfully.');
@@ -56,12 +46,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 sub check_rc {
 	my $rc_ = shift;
 	my $tid = shift;
-#        my %props = (
+        my %props = (
 #		'Release.Count' => $count,
-#		'Release.Datetime' => $now);
+		'Release.Datetime' => strftime('%FT%TZ', gmtime(time)));
 
 	if($rc_==0) {
-		#$tracker->setTicketProperties($tid, \%props);
+		$tracker->setTicketProperties($tid, \%props);
 
 	} else {
 		$tracker->setTicketFailed($tid, 'Release Script failed: '. $rc_);
