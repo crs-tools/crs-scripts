@@ -4,6 +4,7 @@ require CRS::Auphonic;
 require C3TT::Client;
 require boolean;
 use File::Basename qw(dirname);
+use File::Spec qw(rel2abs);
 use Data::Dumper;
 
 my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
@@ -29,6 +30,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $auphonicflag = 'no';
 	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
+	$auphonicflag = 'no' unless (defined ($props->{'Processing.Auphonic.Enable'}));
 	$auphonicflag = $props->{'Processing.Auphonic.Enable'} if (defined ($props->{'Processing.Auphonic.Enable'}) && $auphonicflag eq 'yes');
 
 	if ($auphonicflag ne 'yes') {
@@ -44,9 +46,13 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		# locate exmljob-filtered.pl by tracker property
 		my $perlPath = $props->{'Processing.Path.Exmljob'};
 		if (!defined($perlPath) || $perlPath eq '') {
-			print STDERR "Processing.Path.Exmljob is missing!";
-			sleep 5;
-			die;
+			# try some fallback
+			$perlPath = dirname(rel2abs( __FILE__ )) . '/../../job-control/exmljob-filtered.pl';
+			if (! -f $perlPath) {
+				print STDERR "Processing.Path.Exmljob is missing!";
+				sleep 5;
+				die;
+			}
 		}
 	
 		# execute exmljob-filtered.pl with the downloaded jobfile
@@ -57,6 +63,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			$tracker->setTicketFailed($tid, "postencoding failed! Status: $? Output: '$output'");
 			die;
 		}
+		unlink($jobfilePath);
 		$tracker->setTicketDone($tid, 'postencoding executed successfully');
 		# indicate short sleep to wrapper script
 		exit(100);
@@ -116,7 +123,6 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# upload changed properties to tracker
 	$tracker->setTicketProperties($tid, \%props_new);
-	# $tracker->setTicketDone($tid, 'Auphonic production started'); # TODO optional machen fuer anderes pipeline layout?
 }
 
 # query tickets that are in postencoding state and assigned to this worker
@@ -140,6 +146,11 @@ foreach (@$tickets) {
 	my $auphonicToken = $props->{'Processing.Auphonic.Token'};
 	my $uuid1 = $props->{'Processing.Auphonic.ProductionID1'};
 	my $uuid2 = $props->{'Processing.Auphonic.ProductionID2'};
+
+	if (!defined($auphonicToken) || !defined($uuid1)) {
+		$tracker->setTicketFailed($tid, 'stale postencoding ticket or Auphonic upload failed!');
+		next;
+	}
 
 	# poll production states
 	my $a1 = CRS::Auphonic->new($auphonicToken, $uuid1);
@@ -185,9 +196,13 @@ foreach (@$tickets) {
 	# locate exmljob-filtered.pl by tracker property
 	my $perlPath = $props->{'Processing.Path.Exmljob'};
 	if (!defined($perlPath) || $perlPath eq '') {
-		print STDERR "Processing.Path.Exmljob is missing!";
-		sleep 5;
-		die;
+		# try some fallback
+		$perlPath = dirname(File::Spec->rel2abs( __FILE__ )) . '/../../job-control/exmljob-filtered.pl';
+		if (! -f $perlPath) {
+			print STDERR "Processing.Path.Exmljob is missing!";
+			sleep 5;
+			die;
+		}
 	}
 
 	# execute exmljob-filtered.pl with the downloaded jobfile
@@ -201,6 +216,7 @@ foreach (@$tickets) {
 
 	# done
 	$tracker->setTicketDone($tid);
+	unlink($jobfilePath);
 	print "sleeping a while...\n";
 	sleep 5;
 }
