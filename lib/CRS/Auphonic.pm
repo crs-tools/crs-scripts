@@ -110,7 +110,7 @@ sub new {
 
 	# just to be safe:
 	$self->{authtoken} =~ s/^\s+|\s+$//g ;
-	$self->{uuid} =~ s/^\s+|\s+$//g ;
+	$self->{uuid} =~ s/^\s+|\s+$//g if defined($self->{uuid});
 
 	bless $self;
 	return $self;
