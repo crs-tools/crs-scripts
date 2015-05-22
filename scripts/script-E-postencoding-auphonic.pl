@@ -19,6 +19,7 @@ if (!defined($token)) {
 # fetch ticket ready to state postencoding, thus ready to be transmitted to auphonic
 my $tracker = C3TT::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding');
+my $didsomething = 0;
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postencoding\n";
@@ -124,6 +125,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# upload changed properties to tracker
 	$tracker->setTicketProperties($tid, \%props_new);
+	$didsomething = 1;
 }
 
 # query tickets that are in postencoding state and assigned to this worker
@@ -217,8 +219,13 @@ foreach (@$tickets) {
 
 	# done
 	$tracker->setTicketDone($tid);
+	$didsomething = 1;
 	unlink($jobfilePath);
 	print "sleeping a while...\n";
 	sleep 5;
+}
+
+if ($didsomething == 1) {
+	exit(100);
 }
 
