@@ -32,7 +32,9 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print " OK\n";
 	my $destfile = $props->{'Publishing.UploadTarget'} . '/' . $props->{'Fahrplan.ID'} . "-" . 
 		$props->{'EncodingProfile.Slug'} . '.' . $props->{'EncodingProfile.Extension'};
-	my $opts = $props->{'Processing.Postprocessing.Options'};
+	# support old property as fallback
+	my $opts = $props->{'Publishing.UploadOptions'};
+	$opts = $props->{'Processing.Postprocessing.Options'} unless defined ($opts);
 	$opts = "" unless defined ($opts);
 	print "$srcfile (in) -> $destfile (out) ...";
 	my $cmd = "scp -B -p $opts '$srcfile' '$destfile'";
