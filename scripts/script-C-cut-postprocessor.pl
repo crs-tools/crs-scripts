@@ -24,10 +24,14 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$container = 'DV' unless defined($container);
 
 	my $fuse;
+	my $intropath;
+
 	if ($container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
+		$intropath = $fuse->getIntro('.dv', $vid);
 	} else {
 		$fuse = CRS::Fuse::TS->new($props);
+		$intropath = $fuse->getIntro('.ts', $vid);
 	}
 
 	my $ret = $fuse->checkCut($vid) + $isRepaired;
@@ -36,6 +40,19 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE!');
 		die ('CUTTING INCOMPLETE!');
 	}
+	# check intro, gather duration
+	if (defined($props->{'Processing.Path.Intros'}) && !defined($intropath)) {
+		$tracker->setTicketFailed($tid, 'INTRO MISSING!');
+		die ('INTRO MISSING!');
+	}
+	my @ffprobe = qx ( ffprobe -i "$intropath" -sexagesimal -print_format flat -show_format );
+	foreach (@ffprobe) {
+		if ( $_ =~ /^format.duration="(.+)"/ ) {
+			$introduration = $1;
+			last;
+		}
+	}
+
 	# get necessary metadata from tracker
 	my $starttime = $props->{'Record.Starttime'};
 
@@ -56,6 +73,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		'Record.Cutinseconds' => $inseconds,
 		'Record.Cutdiffseconds' => $diffseconds,
 		'Record.Cutoutseconds' => $outseconds);
+	# do NOT override project-wide setting:
+	$props{'Processing.Duration.Intro'} = $introduration if (defined($introduration) && !defined($props->{'Processing.Duration.Intro'}));
 
 	$tracker->setTicketProperties($tid, \%props);
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
