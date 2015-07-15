@@ -28,10 +28,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	if ($container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
-		$intropath = $fuse->getIntro('.dv', $vid);
+		$intropath = $fuse->getIntro('dv', $vid);
 	} else {
 		$fuse = CRS::Fuse::TS->new($props);
-		$intropath = $fuse->getIntro('.ts', $vid);
+		$intropath = $fuse->getIntro('ts', $vid);
 	}
 
 	my $ret = $fuse->checkCut($vid) + $isRepaired;
