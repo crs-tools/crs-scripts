@@ -48,7 +48,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		my $perlPath = $props->{'Processing.Path.Exmljob'};
 		if (!defined($perlPath) || $perlPath eq '') {
 			# try some fallback
-			$perlPath = dirname(rel2abs( __FILE__ )) . '/../../job-control/exmljob-filtered.pl';
+			$perlPath = dirname(File::Spec->rel2abs( __FILE__ )) . '/../../job-control/exmljob-filtered.pl';
 			if (! -f $perlPath) {
 				print STDERR "Processing.Path.Exmljob is missing!";
 				sleep 5;
