@@ -58,7 +58,7 @@ use constant PREFIX => 'C3TT.';
 
 # Number of repetitions to perform when the communication with the tracker raises an exception
 # E.g.: the client will wait 10s after a fail before retrying (10 * 6 = 1 minute)
-use constant REMOTE_CALL_TRIES => 6;
+use constant REMOTE_CALL_TRIES => 180;
 use constant REMOTE_CALL_SLEEP => 10;
 
 sub new {
