@@ -164,7 +164,7 @@ sub getProductionInfo {
 		$self->{json} = undef;
 		$self->{jsontime} = undef;
 
-		# doenload current production status
+		# download current production status
 		$json = $self->getProductionJSON();
 		if (defined($json) and defined($self->{uuid})) {
 			# update cache timestamp
