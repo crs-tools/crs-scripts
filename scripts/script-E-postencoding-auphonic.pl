@@ -16,7 +16,6 @@ sub getMD5 {
 	binmode ($fh);
 	my $hash = Digest::MD5->new->addfile($fh)->hexdigest;
 	my $languageCount = scalar(keys(%{$languages}));
-	print "found language count $languageCount \n";
 	return $hash . '-' . $languageCount;
 }
 
