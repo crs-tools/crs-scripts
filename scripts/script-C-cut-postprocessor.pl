@@ -25,6 +25,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $fuse;
 	my $intropath;
+	my $introduration;
 
 	if ($container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
@@ -41,23 +42,37 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		die ('CUTTING INCOMPLETE!');
 	}
 	# check intro, gather duration
-	if (defined($props->{'Processing.Path.Intros'}) && !defined($intropath)) {
-		$tracker->setTicketFailed($tid, 'INTRO MISSING!');
-		die ('INTRO MISSING!');
-	}
-	my @ffprobe = qx ( ffprobe -i "$intropath" -sexagesimal -print_format flat -show_format );
-	foreach (@ffprobe) {
-		if ( $_ =~ /^format.duration="(.+)"/ ) {
-			$introduration = $1;
-			last;
+	if (defined($props->{'Processing.Path.Intros'})) {
+		if (!defined($intropath)) {
+			$tracker->setTicketFailed($tid, 'INTRO MISSING!');
+			die ('INTRO MISSING!');
+		}
+		my @ffprobe = qx ( ffprobe -i "$intropath" -sexagesimal -print_format flat -show_format );
+		foreach (@ffprobe) {
+			if ( $_ =~ /^format.duration="(.+)"/ ) {
+				$introduration = $1;
+				last;
+			}
 		}
 	}
 
-	# get necessary metadata from tracker
-	my $starttime = $props->{'Record.Starttime'};
+	my ($in, $out, $inseconds, $outseconds) = (0, undef, 0, undef);
+	if ($isRepaired == 0 || $container eq 'DV') {
+		# get necessary metadata from tracker
+		my $starttime = $props->{'Record.Starttime'};
 
-	# get metadata from fuse mount and store them in tracker
-	my ($in, $out, $inseconds, $outseconds) = $fuse->getCutmarks($vid, $starttime);
+		# get metadata from fuse mount and store them in tracker
+		($in, $out, $inseconds, $outseconds) = $fuse->getCutmarks($vid, $starttime);
+	} else {
+		$uncutpath = $fuse->getMountPath($vid) . '/uncut.ts';
+		my @ffprobe = qx ( ffprobe -i "$uncutpath" -print_format flat -show_format );
+		foreach (@ffprobe) {
+			if ( $_ =~ /^format.duration="(.+)"/ ) {
+				$outseconds = $1;
+				last;
+			}
+		}
+	}
 
 	my $diffseconds;
 	$diffseconds = $outseconds - $inseconds if (defined($outseconds) && defined($inseconds));
@@ -69,10 +84,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$outseconds =~ s/0+$// if ($outseconds =~ /\.[0-9]+/);
 	my %props = (
 		'Record.Cutin' => $in, 
-		'Record.Cutout' => $out,
 		'Record.Cutinseconds' => $inseconds,
-		'Record.Cutdiffseconds' => $diffseconds,
-		'Record.Cutoutseconds' => $outseconds);
+		'Record.Cutdiffseconds' => $diffseconds);
+	$props{'Record.Cutout'} = $out if (defined($out));
+	$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
+
+	# (TODO: rethink this behaviour)
 	# do NOT override project-wide setting:
 	$props{'Processing.Duration.Intro'} = $introduration if (defined($introduration) && !defined($props->{'Processing.Duration.Intro'}));
 
