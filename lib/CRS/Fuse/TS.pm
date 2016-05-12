@@ -40,10 +40,12 @@ sub checkCut {
 	return 0 unless defined($vid);
 	my $p = $self->getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($self->{debug});
+	return 0 unless ( -r "$p/inframe" );
 	my $t = qx ( cat "$p/inframe" );
 	chop $t;
 	return 0 unless defined($t) && ($t > 0);
 	print "checking mark OUT of event $vid\n" if defined($self->{debug});
+	return 0 unless ( -r "$p/outframe" );
 	$t = qx ( cat "$p/outframe" );
 	chop $t;
 	return 0 unless defined($t) && ($t > 0);
