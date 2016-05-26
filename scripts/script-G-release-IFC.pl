@@ -1,8 +1,8 @@
 #!/usr/bin/perl -W
 
-require C3TT::Client;
+use C3TT::Client;
 use POSIX qw(strftime);
-require boolean;
+use boolean;
 use Data::Dumper;
 
 my $tracker = C3TT::Client->new();

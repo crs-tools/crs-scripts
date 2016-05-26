@@ -53,6 +53,7 @@ use Data::Dumper;
 use Net::Domain qw(hostname hostfqdn);
 use Digest::SHA qw(hmac_sha256_hex);
 use URI::Escape qw(uri_escape);
+use IO::Socket::SSL;
 
 use constant PREFIX => 'C3TT.';
 

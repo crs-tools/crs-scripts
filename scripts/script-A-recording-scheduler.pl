@@ -1,8 +1,8 @@
 #!/usr/bin/perl -W
 
-require POSIX;
-require CRS::Fuse::VDV;
-require C3TT::Client;
+use POSIX;
+use CRS::Fuse::VDV;
+use C3TT::Client;
 
 use POSIX qw(strftime);
 use boolean;

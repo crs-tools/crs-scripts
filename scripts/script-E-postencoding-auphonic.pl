@@ -1,8 +1,8 @@
 #!/usr/bin/perl -W
 
-require CRS::Auphonic;
-require C3TT::Client;
-require boolean;
+use CRS::Auphonic;
+use C3TT::Client;
+use boolean;
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(rel2abs);
 use Digest::MD5;

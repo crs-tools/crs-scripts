@@ -1,8 +1,7 @@
 #!/usr/bin/perl -W
 
-#require fusevdv;
-require C3TT::Client;
-require boolean;
+use C3TT::Client;
+use boolean;
 use Data::Dumper;
 
 # Call this script with secret and project slug as parameter!

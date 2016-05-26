@@ -1,7 +1,7 @@
 #!/usr/bin/perl -W
 
-require C3TT::Client;
-require boolean;
+use C3TT::Client;
+use boolean;
 
 my $tracker = C3TT::Client->new();
 my $ticket;

@@ -1,10 +1,10 @@
 #!/usr/bin/perl -W
 
 use strict;
-require CRS::Fuse::VDV;
-require CRS::Fuse::TS;
-require C3TT::Client;
-require boolean;
+use CRS::Fuse::VDV;
+use CRS::Fuse::TS;
+use C3TT::Client;
+use boolean;
 
 my $tracker = C3TT::Client->new();
 
