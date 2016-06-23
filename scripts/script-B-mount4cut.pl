@@ -6,6 +6,15 @@ use CRS::Fuse::TS;
 use C3TT::Client;
 use boolean;
 
+my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
+
+if (!defined($token)) {
+	# print usage
+	print STDERR "Too few parameters given!\n";
+	print STDERR "Give secret and token via environment, please\n\n";
+	exit 1;
+}
+
 my $tracker = C3TT::Client->new();
 
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
