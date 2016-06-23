@@ -11,4 +11,4 @@ if [ ! -f "tracker-profile.sh" ]; then
 	fi
 fi
 
-screen -c ./screenrc-ts
+screen -c ./screenrc-scripts
