@@ -102,6 +102,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		exit(100);
 	}
 
+	# check config properties for auphonic
+	unless (defined ($props->{'Processing.Auphonic.Token'}) and defined ($props->{'Processing.Auphonic.Preset'})) {
+			$tracker->setTicketFailed($tid, "postencoding with Auphonic failed: Property Processing.Auphonic.Token or Processing.Auphonic.Preset missing!");
+			die;
+	}
+
 	# extract languages from properties into separate hash
 	my %languages = getLanguages($props);
 
