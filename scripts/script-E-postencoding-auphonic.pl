@@ -212,9 +212,21 @@ foreach (@$tickets) {
 			$incomplete = 1;
 			last;
 		}
+	}
+
+	if ($incomplete == 1) {
+		next;
+	}
+
+	# if all audio tracks are complete, proceed with download and remux
+	foreach my $langIndex (keys %languages) {
+		$langIndex += 1; # currently the filename indexes start with 1 and not 0
+		my $uuid = $props->{'Processing.Auphonic.ProductionID'.$langIndex}; # existence is checked in previous loop
+
 		my $dest = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.
 			'-audio'.$langIndex.'-auphonic.m4a';
 		print "downloading audio track $langIndex from Auphonic... to '$dest'\n";
+		my $auphonic = CRS::Auphonic->new($auphonicToken, $uuid);
 		if (!$auphonic->downloadResult($dest)) {
 			$tracker->setTicketFailed($tid, "download of audio track $langIndex from auphonic failed!");
 			$incomplete = 1;
@@ -222,6 +234,7 @@ foreach (@$tickets) {
 		}
 	}
 
+	# some download failed
 	if ($incomplete == 1) {
 		next;
 	}
