@@ -1,1 +1,0 @@
-script-D-encoding.sh
