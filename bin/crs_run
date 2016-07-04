@@ -1,7 +1,18 @@
 #!/bin/bash
 
-if [ -z "${CRS_SECRET}" ]; then
-    echo "CRS_SECRET not set. aborting.";
+CONFIGFILE=/etc/default/crs-worker
+
+if [ -r "${CONFIGFILE}" ] ; then
+    . "${CONFIGFILE}"
+fi
+
+export CRS_SECRET=${CRS_SECRET:-$DEFAULT_CRS_SECRET}
+export CRS_TOKEN=${CRS_TOKEN:-$DEFAULT_CRS_TOKEN}
+export CRS_TRACKER=${CRS_TRACKER:-$DEFAULT_CRS_TRACKER}
+export HTTPS_CA_DIR=${HTTPS_CA_DIR:-/etc/ssl/certs}
+
+if [ -z "${CRS_SECRET}" -o -z "${CRS_TOKEN}" -o -z "${CRS_TRACKER}" ]; then
+    echo "CRS_SECRET, CRS_TOKEN and/or CRS_TRACKER not set. aborting.";
     exit 1;
 fi
 
@@ -12,7 +23,7 @@ if [ -z "${SCRIPT_NAME}" ]; then
     exit 1
 fi
 
-SLEEP_TIME=$2
+SLEEP_TIME=${2:-30}
 if [ -z "${SLEEP_TIME}" ]; then 
     SLEEP_TIME=30
 fi
@@ -21,20 +32,6 @@ fi
 SLEEP_TIME_SHORT=2
 # long sleep time if no project assigned
 SLEEP_TIME_LONG=300
-
-# only run once per host
-mkdir -p /tmp/crs
-PIDFILE=/tmp/crs/${SCRIPT_NAME}.pid
-if test -f "$PIDFILE"; then
-    PID="$(cat "$PIDFILE")"
-    if ps -p $PID | grep --quiet 'crs_run'; then
-        echo "An instance of '${SCRIPT_NAME}' is already running!" >&2
-        # TODO: support for "kill and restart"
-        exit 1
-    fi
-fi
-echo $$ > "$PIDFILE"
-PID=`cat "$PIDFILE"`
 
 # get path
 SCRIPT_PATH=$(readlink $0)
@@ -55,12 +52,12 @@ if [ ! -f "${SCRIPT}" ]; then
     echo "selected script (${SCRIPT}) does not exist";
 fi
 
-# make sure to remove pid file on exit
-trap "{ rm -f $PIDFILE ; }" EXIT
-
+if [ ! -x "${SCRIPT}" ]; then
+    echo "selected script (${SCRIPT}) is not executable";
+fi
 
 echo "-------------------------------------------"
-echo "       CRS Runner v1.0 by FeM 2013"
+echo "       CRS Runner v1.0 by FeM 2016"
 echo "-------------------------------------------"
 echo "    Script:  ${SCRIPT_NAME}"
 echo "Sleep time:  ${SLEEP_TIME}s"
