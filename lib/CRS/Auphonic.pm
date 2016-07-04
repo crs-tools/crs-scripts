@@ -212,6 +212,21 @@ sub startProduction {
 	my $file = shift;
 	my $title = shift;
 
+	unless (-e $file) {
+		$self->{error} = "Input file '$file' not existent";
+		return;
+	}
+
+	if (-d $file) {
+		$self->{error} = "Input file '$file' is a directory";
+		return;
+	}
+
+	unless (-r $file) {
+		$self->{error} = "Input file '$file' not readable";
+		return;
+	}
+
 	# just to be safe:
 	$preset =~ s/^\s+|\s+$//g ;
 
@@ -251,9 +266,8 @@ sub startProduction {
 		return $ret;
 	}
 
-	# show http-error otherwise
-	print STDERR "Start production returns $httpcode and error is '" .$curl->errbuf . "'\n";
-	return undef;
+	# save http-error otherwise
+	$self->{error} = "Start production returned $httpcode and error is '" .$curl->errbuf;
 }
 
 sub downloadResult {
@@ -294,6 +308,11 @@ sub downloadResult {
 	# show http-error otherwise
 	print STDERR "Download production returns $httpcode and error is '" .$curl->errbuf . "'\n";
 	return 0;
+}
+
+sub getError {
+	my $self = shift;
+	return $self->{error};
 }
 
 1;
