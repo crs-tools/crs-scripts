@@ -154,8 +154,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			if (!defined($production)) {
 				my $error = $auphonic->getError();
 				print STDERR "Starting production for audio track $langIndex failed! Error: $error\n";
-				$tracker->setTicketFailed($tid, "Starting production for audio track $langIndex failed! ".
-					"Reason: $error";
+				$tracker->setTicketFailed($tid, "Starting production for audio track $langIndex failed! Reason: $error");
 				die;
 			}
 			my $uuid = $production->getUUID();
