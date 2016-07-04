@@ -149,14 +149,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			my $audioSrcFile = $props->{'Processing.Path.Tmp'}.'/'.
 				$vid.'-'.$props->{'EncodingProfile.Slug'}.'-audio'.$langIndex.'.ts';
 			print "Starting production for audio track $langIndex\n";
-			my $auphonic = $auphonic->startProduction($auphonicPreset, $audioSrcFile, 
-				$props->{'Project.Slug'}.'-'.$vid.'-audio'.$langIndex) or die $!;
-			if (!defined($auphonic)) {
-				print STDERR "Starting production for audio track $langIndex failed!\n";
-				$tracker->setTicketFailed($tid, "Starting production for audio track $langIndex failed!");
+			my $production = $auphonic->startProduction($auphonicPreset, $audioSrcFile, 
+				$props->{'Project.Slug'}.'-'.$vid.'-audio'.$langIndex);
+			if (!defined($production)) {
+				my $error = $auphonic->getError();
+				print STDERR "Starting production for audio track $langIndex failed! Error: $error\n";
+				$tracker->setTicketFailed($tid, "Starting production for audio track $langIndex failed! ".
+					"Reason: $error";
 				die;
 			}
-			my $uuid = $auphonic->getUUID();
+			my $uuid = $production->getUUID();
 			print "Started production for audio track $langIndex as '$uuid'\n";
 			$props_new{'Processing.Auphonic.ProductionID'.$langIndex} = $uuid;
 		}
