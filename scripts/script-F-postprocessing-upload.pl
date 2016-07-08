@@ -4,17 +4,7 @@ use C3TT::Client;
 use boolean;
 
 my $tracker = C3TT::Client->new();
-my $ticket;
-if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
-        my $filter = {};
-        $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-	if (defined($ENV{'CRS_PROFILE'}) && $ENV{'CRS_PROFILE'} ne '') {
-        	$filter->{'EncodingProfile.Slug'} = $ENV{'CRS_PROFILE'};
-	}
-        $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing', $filter);
-} else {
-        $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing');
-}
+my $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postprocessing\n";
