@@ -50,7 +50,7 @@ Create CRS::Auphonic object.
 The authToken is mandatory for using the Auphonic API.
 The uuid is optional and should be given if the production already exists.
 
-=head2 setSpeedLimit($limit);
+=head2 setSpeedLimit($limit)
 
 Set a speed limit on the upload process (HTTP POST). The value given is
 taken as kilobytes per second.
