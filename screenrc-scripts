@@ -13,9 +13,9 @@ hardstatus string '%{= kG}%-Lw%{= kW}%50> %n%f* %t%{= kG}%+Lw%< %{= kG}'
 screen -t A-recording-scheduler      bash -c '. tracker-profile.sh; ./bin/crs_run script-A-recording-scheduler.pl'
 screen -t B-mount4cut                bash -c '. tracker-profile.sh; ./bin/crs_run script-B-mount4cut.pl'
 screen -t C-cut-postprocessor        bash -c '. tracker-profile.sh; ./bin/crs_run script-C-cut-postprocessor.pl'
-screen -t D-encoding                 bash -c '. tracker-profile.sh; ./bin/crs_run script-D-encoding.sh'
+screen -t D-encoding                 bash -c '. tracker-profile.sh; ./bin/crs_run script-D-encoding.pl'
 # legacy:
-#screen -t E-tagging                  bash -c '. tracker-profile.sh; ./bin/crs_run script-E-tagging.sh'
+#screen -t E-tagging                  bash -c '. tracker-profile.sh; ./bin/crs_run script-E-tagging.pl'
 
 screen -t E-postencoding             bash -c '. tracker-profile.sh; ./bin/crs_run script-E-postencoding-auphonic.pl'
 screen -t F-postprocessing           bash -c '. tracker-profile.sh; ./bin/crs_run script-F-postprocessing-upload.pl'
