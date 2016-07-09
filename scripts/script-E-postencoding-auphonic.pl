@@ -1,12 +1,10 @@
 #!/usr/bin/perl -W
 
 use CRS::Auphonic;
+use CRS::Executor;
 use C3TT::Client;
 use boolean;
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(rel2abs);
 use Digest::MD5;
-use Data::Dumper;
 
 
 sub getMD5 {
@@ -31,32 +29,6 @@ sub getLanguages {
 	return %languages;
 }
 
-sub getPerlPath {
-	my $props = shift;
-	# locate exmljob-filtered.pl by tracker property
-	my $perlPath = $props->{'Processing.Path.Exmljob'};
-	if (!defined($perlPath) || $perlPath eq '' || ! -f $perlPath) {
-		# try some fallback
-		$perlPath = dirname(File::Spec->rel2abs( __FILE__ )) . '/../../job-control/exmljob-filtered.pl';
-		if (! -f $perlPath) {
-			print STDERR "Processing.Path.Exmljob is missing!";
-			sleep 5;
-			die;
-		}
-	}
-	return $perlPath;
-}
-
-
-my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
-
-if (!defined($token)) {
-	# print usage
-	print STDERR "Too few information given!\n\n";
-	print STDERR "set environment variables CRS_SECRET and CRS_TOKEN\n\n";
-	exit 1;
-}
-
 # fetch ticket ready to state postencoding, thus ready to be transmitted to auphonic
 my $tracker = C3TT::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding');
@@ -77,29 +49,31 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	if ($auphonicflag ne 'yes') {
 		my $jobfile = $tracker->getJobFile($tid);
-		utf8::encode($jobfile);
-		my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'-foo.xml';
-
-		# download jobfile into a physical file
-		open(my $file, ">", $jobfilePath) or die $!;
-		print $file "$jobfile";
-		close $file;
-
-		# locate exmljob-filtered.pl by tracker property
-		my $perlPath = getPerlPath($props);
-	
-		# execute exmljob-filtered.pl with the downloaded jobfile
-		my $perlDir = dirname($perlPath);
-		chdir $perlDir;
-		$output = qx ( perl "$perlPath" -t postencoding "$jobfilePath" );
-		if ($?) {
-			$tracker->setTicketFailed($tid, "postencoding failed! Status: $? Output: '$output'");
-			die;
+		my $ex = new CRS::Executor($jobfile);
+		unless (defined($ex)) {
+			$tracker->setTicketFailed($tid, "Postencoding script: instantiating job executor failed!");
+			exit;
 		}
-		unlink($jobfilePath);
-		$tracker->setTicketDone($tid, 'postencoding executed successfully');
-		# indicate short sleep to wrapper script
-		exit(100);
+
+		my $time = time;
+		my $return = 0;
+
+		eval {
+			$return = $ex->execute('postencoding');
+		};
+
+		$time = time - $time;
+		$log = join ("\n", $ex->getOutput());
+		utf8::encode($log);
+		$tracker->addLog($tid, $log);
+		if ($return) {
+			$tracker->setTicketDone($tid, "Postencoding tasks completed in $time seconds");
+			# indicate short sleep to wrapper script
+			exit(100);
+		} else {
+			$tracker->setTicketFailed($tid, 'postencoding failed');
+			exit;
+		}
 	}
 
 	# check config properties for auphonic
@@ -243,32 +217,30 @@ foreach (@$tickets) {
 	# remux via encoding profile job of type "remux"
 	print "remuxing audio tracks...\n";
 	my $jobfile = $tracker->getJobFile($tid);
-	utf8::encode($jobfile);
-	my $jobfilePath = $props->{'Processing.Path.Tmp'}.'/job-'.$tid.'.xml';
-
-	# download jobfile into a physical file
-	open(my $file, ">", $jobfilePath) or die $!;
-	print $file "$jobfile";
-	close $file;
-
-	# locate exmljob-filtered.pl by tracker property
-	my $perlPath = getPerlPath($props);
-
-	# execute exmljob-filtered.pl with the downloaded jobfile
-	my $perlDir = dirname($perlPath);
-	chdir $perlDir;
-	$output = qx ( perl "$perlPath" -t remux "$jobfilePath" );
-	if ($?) {
-		$tracker->setTicketFailed($tid, "remuxing failed! Status: $? Output: '$output'");
-		die;
+	my $ex = new CRS::Executor($jobfile);
+	unless (defined($ex)) {
+		$tracker->setTicketFailed($tid, "Postencoding script: instantiating job executor failed!");
+		exit;
 	}
 
-	# done
-	$tracker->setTicketDone($tid);
-	$didsomething = 1;
-	unlink($jobfilePath);
-	print "sleeping a while...\n";
-	sleep 5;
+	my $return = 0;
+
+	eval {
+		$return = $ex->execute('postencoding');
+	};
+
+	$log = join ("\n", $ex->getOutput());
+	utf8::encode($log);
+	$tracker->addLog($tid, $log);
+	if ($return) {
+		$tracker->setTicketDone($tid, 'Postencoding with Auphonic completed');
+		$didsomething = 1;
+		print "sleeping a while...\n";
+		sleep 5;
+	} else {
+		$tracker->setTicketFailed($tid, 'Postencoding with Auphonic failed (remuxing step)');
+		exit;
+	}
 }
 
 if ($didsomething == 1) {
