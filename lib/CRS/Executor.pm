@@ -349,14 +349,14 @@ sub task_loop {
 			if ($successful == 0) {
 				# abort, but don't delete files
 				$self->error('preTaskComplete callback signaled termination');
-				return;
+				last;
 			}
 		}
 
 		#rename output files to real filenames after successful execution, delete them otherwise
 		foreach (keys %{$self->{outfilemap}}) {
 			my ($src, $dest) = ($self->{outfilemap}->{$_},$_);
-			if ($successful) {
+			if ($successful > 0) {
 				$self->print ("renaming '$src' to '$dest'");
 				rename ($src, $dest);
 			} else {
@@ -366,14 +366,14 @@ sub task_loop {
 			delete ($self->{outfilemap}->{$_});
 		}
 
-		last unless $successful;
+		last unless $successful > 0;
 	}
 	#delete other temporary files
 	foreach (keys %{$self->{tmpfilemap}}) {
 		unlink $self->{tmpfilemap}->{$_};
 		delete ($self->{tmpfilemap}->{$_});
 	}
-	return $successful;
+	return $successful > 0;
 }
 
 sub execute {
