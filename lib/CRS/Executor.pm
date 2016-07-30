@@ -40,6 +40,10 @@ Returns undef on error (or dies on fatal error), returns 1 if all tasks were exe
 
 Returns the output of the executed commands together with informational output from the library as array.
 
+=head2 getErrors ()
+
+Returns the errors of the library.
+
 =cut
 
 use strict;
@@ -50,6 +54,7 @@ use File::Spec;
 use File::Which qw(which);
 use XML::Simple qw(:strict);
 use Encode;
+use Carp::Always;
 
 use constant FILE_OK => 0;
 
@@ -70,6 +75,7 @@ sub new {
 	
 	$self->{outfilemap} = {};
 	$self->{output} = [];
+	$self->{errors} = [];
 
 	bless $self;
 	return $self;
@@ -79,6 +85,18 @@ sub print {
 	my ($self, $text) = @_;
 	push @{$self->{output}}, $text;
 	print "$text\n";
+}
+
+sub error {
+	my ($self, $text) = @_;
+	push @{$self->{errors}}, $text;
+	print STDERR "$text\n";
+}
+
+sub fatal {
+	my ($self, $text) = @_;
+	push @{$self->{errors}}, $text;
+	die "$text\n";
 }
 
 # static method, convert Unicode to ASCII, as callback from Encode
@@ -143,14 +161,14 @@ sub check_file {
 	if ($type eq 'exe') {
 		return ($name, FILE_OK) if -x $name;
 		my $path = which $name;
-		die "Executable $name cannot be found!" unless defined($path);
-		die "Executable $name is not executable!" unless -x $path;
+		$self->fatal ("Executable $name cannot be found!") unless defined($path);
+		$self->fatal ("Executable $name is not executable!") unless -x $path;
 		return ($name, FILE_OK);
 	}
 
 	# all other files must be given with absolute paths:
 	if (not File::Spec->file_name_is_absolute($name)) {
-		 die "Non-absolute filename given: '$name'!";
+		 $self->fatal ("Non-absolute filename given: '$name'!");
 	}
 
 	# input and config files must exist
@@ -165,7 +183,7 @@ sub check_file {
 		$name = encode('ascii', $name, \&asciify);
 		return ($name, FILE_OK) if -r $name;
 
-		die "Fatal: File $name is missing!";
+		$self->fatal ("Fatal: File $name is missing!");
 	}
 
 	# output files must not exist. if they do, they are deleted and deletion is checked
@@ -173,7 +191,7 @@ sub check_file {
 		if (-e $name) {
 			$self->print ("Output file exists: '$name', deleting file.");
 			unlink $name;
-			die "Cannot delete '$name'!" if -e $name;
+			$self->fatal ("Cannot delete '$name'!") if -e $name;
 		}
 		# check that the directory of the output file exists and is writable. if it
 		# does not exist, try to create it.
@@ -181,9 +199,9 @@ sub check_file {
 		if (not -d $outputdir) {
 			$self->print ("Output path '$outputdir' does not exist, trying to create");
 			qx ( mkdir -p $outputdir );
-			die "Cannot create directory '$outputdir'!" if (not -d $outputdir);
+			$self->fatal ("Cannot create directory '$outputdir'!") if (not -d $outputdir);
 		}
-		die "Output path '$outputdir' is not writable!" unless (-w $outputdir or -k $outputdir);
+		$self->fatal ("Output path '$outputdir' is not writable!") unless (-w $outputdir or -k $outputdir);
 
 		# store real output filename, return unique temp filename instead
 		if (defined($self->{outfilemap}->{$name})) {
@@ -195,12 +213,12 @@ sub check_file {
 				$self->{outfilemap}->{$name} = $tempname;
 				return ($tempname, FILE_OK) unless -e $tempname;
 			} while ($safety--);
-			die "Unable to produce random tempname!";
+			$self->fatal ("Unable to produce random tempname!");
 		}
 	}
 
 	# do not allow unknown filetypes
-	die "Unknown file type in jobfile: $type";
+	$self->fatal ("Unknown file type in jobfile: $type");
 }
 
 # create command 
@@ -274,7 +292,7 @@ sub run_cmd {
 	$cmd = encode($cmdencoding, $cmd);
 
 	my $handle;
-	open ($handle, '-|', $cmd . ' 2>&1') or die "Cannot execute command";
+	open ($handle, '-|', $cmd . ' 2>&1') or $self->fatal ("Cannot execute command");
 	while (<$handle>) {
 		my $line = decode($cmdencoding, $_);
 		print $line;
@@ -352,6 +370,11 @@ sub execute {
 sub getOutput {
 	my $self = shift;
 	return @{$self->{output}};
+}
+
+sub getErrors {
+	my $self = shift;
+	return @{$self->{errors}};
 }
 
 1;
