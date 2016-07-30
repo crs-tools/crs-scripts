@@ -63,7 +63,6 @@ sub new {
 	my $jobxml = shift;
 	my $self;
 
-	#### CHECK: utf8::encode($jobxml);
 	$self->{jobxml} = $jobxml;
 	$self->{job} = load_job($jobxml);
 
@@ -74,6 +73,7 @@ sub new {
 	$self->{locenc} = `locale charmap`;
 	
 	$self->{outfilemap} = {};
+	$self->{tmpfilemap} = {};
 	$self->{output} = [];
 	$self->{errors} = [];
 
@@ -187,9 +187,9 @@ sub check_file {
 	}
 
 	# output files must not exist. if they do, they are deleted and deletion is checked
-	if ($type eq 'out') {
+	if ($type eq 'out' || $type eq 'tmp') {
 		if (-e $name) {
-			$self->print ("Output file exists: '$name', deleting file.");
+			$self->print ("Output or temporary file exists: '$name', deleting file.");
 			unlink $name;
 			$self->fatal ("Cannot delete '$name'!") if -e $name;
 		}
@@ -206,15 +206,18 @@ sub check_file {
 		# store real output filename, return unique temp filename instead
 		if (defined($self->{outfilemap}->{$name})) {
 			return ($self->{outfilemap}->{$name}, FILE_OK);
-		} else {
-			my $safety = 10;
-			do {
-				my $tempname = $name . '.' . int(rand(32767));
-				$self->{outfilemap}->{$name} = $tempname;
-				return ($tempname, FILE_OK) unless -e $tempname;
-			} while ($safety--);
-			$self->fatal ("Unable to produce random tempname!");
 		}
+		if (defined($self->{tmpfilemap}->{$name})) {
+			return ($self->{tmpfilemap}->{$name}, FILE_OK);
+		}
+		my $safety = 10;
+		do {
+			my $tempname = $name . '.' . int(rand(32767));
+			$self->{outfilemap}->{$name} = $tempname if $type eq 'out';
+			$self->{tmpfilemap}->{$name} = $tempname if $type eq 'tmp';
+			return ($tempname, FILE_OK) unless -e $tempname;
+		} while ($safety--);
+		$self->fatal ("Unable to produce random tempname!");
 	}
 
 	# do not allow unknown filetypes
@@ -323,15 +326,14 @@ sub task_loop {
 	}
 
 	my $num_tasks = scalar @tasks;
+	my $successful = 1;
 	TASK: for (my $task_id = 0; $task_id < $num_tasks; ++$task_id) {
-		next TASK if (defined($self->{filter}) and $tasks[$task_id]->{type} ne $self->{filter});
 
 		# parse XML and print cmd
 		my $cmd = $self->parse_cmd($tasks[$task_id]->{option});
 		$self->print ("now executing task " . ($task_id + 1) . " of $num_tasks");
 
-		my $successful = $self->run_cmd($cmd, $tasks[$task_id]->{encoding});
-
+		$successful = $self->run_cmd($cmd, $tasks[$task_id]->{encoding});
 		#check output files for existence if command claimed to be successfull
 		if ($successful) {
 			foreach (keys %{$self->{outfilemap}}) {
@@ -341,22 +343,37 @@ sub task_loop {
 			}
 		}
 
+		# call hook
+		if ($successful && defined($self->{precb})) {
+			$successful = $self->{precb}->($self);
+			if ($successful == 0) {
+				# abort, but don't delete files
+				$self->error('preTaskComplete callback signaled termination');
+				return;
+			}
+		}
+
 		#rename output files to real filenames after successful execution, delete them otherwise
 		foreach (keys %{$self->{outfilemap}}) {
 			my ($src, $dest) = ($self->{outfilemap}->{$_},$_);
 			if ($successful) {
 				$self->print ("renaming '$src' to '$dest'");
 				rename ($src, $dest);
-				delete ($self->{outfilemap}->{$_});
 			} else {
 				$self->print ("deleting '$src'");
 				unlink $src;
 			}
+			delete ($self->{outfilemap}->{$_});
 		}
 
-		return unless $successful;
+		last unless $successful;
 	}
-	return 1;
+	#delete other temporary files
+	foreach (keys %{$self->{tmpfilemap}}) {
+		unlink $self->{tmpfilemap}->{$_};
+		delete ($self->{tmpfilemap}->{$_});
+	}
+	return $successful;
 }
 
 sub execute {
@@ -375,6 +392,45 @@ sub getOutput {
 sub getErrors {
 	my $self = shift;
 	return @{$self->{errors}};
+}
+
+=head2 setPreTaskFinishCallback (sub reference)
+
+Register a callback that is called after a task has been finished but before the output files 
+are renamed to their actual names. The callback gets one parameter, the calling Executor instance.
+
+The return value of this callback is important.
+If it returns 1, execution continues.
+If it returns 0, execution will not continue.
+If it returns -1, execution will not continue and the temporary output files are deleted.
+
+=cut
+
+sub setPreTaskFinishCallback {
+	my $self = shift;
+	my $cb = shift;
+	unless (ref $cb) {
+		$self->error("not a callback reference: ".Dumper($cb));
+		return;
+	}
+	$self->{precb} = $cb;
+}
+
+=head2 getTemporaryFiles ()
+
+This method returns an array containing all absolute full paths of the temporary 
+files that have been created in the execution phase.
+
+=cut
+
+sub getTemporaryFiles {
+	my $self = shift;
+	my @ret = ();
+
+	foreach (keys %{$self->{outfilemap}}) {
+		push @ret, $self->{outfilemap}->{$_};
+	}
+	return @ret;
 }
 
 1;
