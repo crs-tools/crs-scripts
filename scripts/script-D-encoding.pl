@@ -34,7 +34,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$return = $ex->execute();
 	};
 
-	$time = time - $start;
+	$time = time - $time;
 
 	if ($return) {
 		# this is to verbose:
