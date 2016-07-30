@@ -65,14 +65,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		if ($return) {
 			$time = time - $time;
 			$log = join ("\n", $ex->getOutput());
-			utf8::encode($log);
 			$tracker->addLog($tid, $log);
 			$tracker->setTicketDone($tid, "Postencoding tasks completed in $time seconds");
 			# indicate short sleep to wrapper script
 			exit(100);
 		} else {
 			$log = join ("\n", $ex->getErrors());
-			utf8::encode($log);
 			$tracker->setTicketFailed($tid, 'postencoding failed:' . $log);
 			exit;
 		}
@@ -232,7 +230,6 @@ foreach (@$tickets) {
 	};
 
 	$log = join ("\n", $ex->getOutput());
-	utf8::encode($log);
 	$tracker->addLog($tid, $log);
 	if ($return) {
 		$tracker->setTicketDone($tid, 'Postencoding with Auphonic completed');
