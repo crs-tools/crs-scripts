@@ -46,7 +46,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		exit(100);
 	} else {
 		$log = join ("\n", $ex->getErrors());
-		$tracker->addLog($tid, $log);
+		$tracker->addLog($tid, $log) if ($log && $log ne '');
 		# do not try to set failed if we aborted because of tracker issues:
 		$tracker->setTicketFailed($tid, "Encoding tasks failed!") unless $abortion;
 	}
@@ -66,5 +66,5 @@ sub checkTicketStatus() {
 	my $files = join (', ', $caller->getTemporaryFiles());
 	$tracker->addLog($ticket->{id}, "Aborting command execution after task $taskcount, leaving stale encoded files: $files");
 	$abortion = 1;
-	return 0;
+	return 0; # -1 if temporary output files should be deleted
 }
