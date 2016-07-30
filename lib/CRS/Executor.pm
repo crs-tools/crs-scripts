@@ -6,7 +6,7 @@ CRS::Executor - Library for executing Tracker XML Jobfiles
 
 =head1 VERSION
 
-Version 1.0rc1
+Version 1.0
 
 =head1 SYNOPSIS
 
@@ -433,4 +433,54 @@ sub getTemporaryFiles {
 	return @ret;
 }
 
+=head1 JOBFILE FORMAT
+
+There must be a <job> tag as document root element.
+
+A job element contains one 'tasks' element describing one or more tasks.  Every
+task is made up of options.  Those options are changed by the Executor if they
+are marked as being filenames, but finally get concatenated to a cmd line which 
+is executed.  Multiple tasks of the same type are executed in the order they
+appear in the XML.
+
+Make sure you mark every input and output file with 'filetype="in"', 'filetype="tmp"' or
+'filetype="out"', so the program can check for existence of those files, the containing
+folders, map them to temporary names and so on.  All paths of files MUST be absolute.
+The filetype 'cfg' is accepted for backward compatibility, but treated exactly like
+filetype 'in'.
+
+You don't need to quote an option.  This will be done automagically if
+the option's value contains whitespace characters. You can override this
+behaviour by including an attribute quoted="no" in the option element.
+
+       <?xml version="1.0"?>
+        <job>
+          <tasks>
+            <task type="encoding">
+              <option filetype="exe">ffmpeg</option>
+              <option>-i</option>
+              <option filetype="in">/path/to/src</option>
+              <option quoted="no">| x264</option>
+              <option>-preset</option>
+              <option filetype="cfg">/path/to/preset</option>
+              <option>&gt;</option>
+              <option filetype="out">file-x264</option>
+            </task>
+
+            <task type="tagging">
+              <option filetype="exe">AtomicParsely</option>
+              <option>-i</option>
+              <option filetype="in">file-x264</option>
+              <option>-o</option>
+              <option filetype="out">/dest/outfile</option>
+              <option>-author</option>
+              <option>John Doe</option>
+              <option>-title</option>
+              <option>Foo Bar</option>
+            </task>
+          </tasks>
+
+        </job>
+
+=cut
 1;
