@@ -371,6 +371,8 @@ sub task_loop {
 	#delete other temporary files
 	foreach (keys %{$self->{tmpfilemap}}) {
 		unlink $self->{tmpfilemap}->{$_};
+		# dirty hack for FFmpeg files
+		unlink $self->{tmpfilemap}->{$_} . '-0.log';
 		delete ($self->{tmpfilemap}->{$_});
 	}
 	return $successful > 0;
