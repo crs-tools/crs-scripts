@@ -33,7 +33,6 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$time = time - $time;
 
 	$log = join ("\n", $ex->getOutput());
-	utf8::encode($log);
 
 	if ($return) {
 		$tracker->addLog($tid, $log);
