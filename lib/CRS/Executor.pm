@@ -54,7 +54,6 @@ use File::Spec;
 use File::Which qw(which);
 use XML::Simple qw(:strict);
 use Encode;
-use Carp::Always;
 
 use constant FILE_OK => 0;
 
