@@ -41,6 +41,11 @@ while($tickets_left) {
 	}
 
     print "found ticket #" . $ticket->{id} . ". ";
+    $props = $tracker->getTicketProperties($ticket->{id});
+    if (defined($props->{'Fahrplan.Recording.Optout'}) && $props->{'Fahrplan.Recording.Optout'} eq '1') {
+        print "Recording is opt-out!\n";
+        $tracker->setTicketFailed($ticket->{id}, 'Recording has optout-flag!');
+    }
 }
 
 # find assigned tickets in state recording

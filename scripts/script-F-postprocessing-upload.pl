@@ -13,6 +13,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "postprocessing ticket # $tid\n";
 
 	my $props = $tracker->getTicketProperties($tid);
+	if (defined($props->{'Fahrplan.Recording.Optout'}) && $props->{'Fahrplan.Recording.Optout'} eq '1') {
+		print "Ticket is opt-out!!\n\n";
+		$tracker->setTicketFailed($tid, 'Recording has optout-flag!');
+		exit(100);
+	}
+
 	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Fahrplan.ID'} . 
 		"-" . $props->{'EncodingProfile.Slug'} . "." . $props->{'EncodingProfile.Extension'};
 	print "checking $srcfile...";
