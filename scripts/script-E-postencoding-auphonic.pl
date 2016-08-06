@@ -226,7 +226,7 @@ foreach (@$tickets) {
 	my $return = 0;
 
 	eval {
-		$return = $ex->execute('postencoding');
+		$return = $ex->execute('remux');
 	};
 
 	$log = join ("\n", $ex->getOutput());
