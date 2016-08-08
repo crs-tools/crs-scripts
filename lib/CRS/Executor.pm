@@ -165,23 +165,35 @@ sub check_file {
 		return ($name, FILE_OK);
 	}
 
+	my $alternateName = $name;
+	my $protocol;
 	# all other files must be given with absolute paths:
 	if (not File::Spec->file_name_is_absolute($name)) {
-		 $self->fatal ("Non-absolute filename given: '$name'!");
+		if ($name =~ /^(.+:)([^:]+)$/) { # try URL style, e.g. for FFmpeg input syntax
+			$protocol = $1;
+			$alternateName = $2;
+		}
+		if (not File::Spec->file_name_is_absolute($alternateName)) {
+			$self->fatal ("Non-absolute filename given: '$protocol$name'!");
+		}
 	}
 
 	# input and config files must exist
 	if ($type eq 'in' or $type eq 'cfg') {
-		return ($name, FILE_OK) if -r $name;
+		return ($name, FILE_OK) if -r $name or -r $alternateName;
 
 		# maybe it is a file that is produced during this execution?
 		if (defined($self->{outfilemap}->{$name})) {
 			return ($self->{outfilemap}->{$name}, FILE_OK);
 		}
+		if (defined($self->{outfilemap}->{$alternateName})) {
+			return ($protocol.$self->{outfilemap}->{$alternateName}, FILE_OK);
+		}
 		# try harder to find: asciify filename
 		$name = encode('ascii', $name, \&asciify);
 		return ($name, FILE_OK) if -r $name;
 
+		$self->fatal ("Fatal: File $protocol$alternateName is missing!") if defined($protocol);
 		$self->fatal ("Fatal: File $name is missing!");
 	}
 
