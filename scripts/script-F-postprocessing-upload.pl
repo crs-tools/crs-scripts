@@ -19,6 +19,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		exit(100);
 	}
 
+	# hacky way to check for slave ticket:
+	if (defined($props->{'Publishing.Upload.SkipSlaves'}) &&
+			($props->{'Publishing.Upload.SkipSlaves'} eq '1' || $props->{'Publishing.Upload.SkipSlaves'} eq 'yes') &&
+			$props->{'Processing.UseAuphonic'} ne 'yes' ) {
+
+		print "\nskipping file because it belongs to a slave ticket!\n";
+		sleep 1;
+		$tracker->setTicketDone($tid, 'Encoding postprocessor: upload skipped, slave ticket.');
+	}
+
 	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Fahrplan.ID'} . 
 		"-" . $props->{'EncodingProfile.Slug'} . "." . $props->{'EncodingProfile.Extension'};
 	print "checking $srcfile...";
