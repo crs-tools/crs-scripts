@@ -27,6 +27,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		print "\nskipping file because it belongs to a slave ticket!\n";
 		sleep 1;
 		$tracker->setTicketDone($tid, 'Encoding postprocessor: upload skipped, slave ticket.');
+		exit(100);
 	}
 
 	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Fahrplan.ID'} . 
