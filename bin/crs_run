@@ -67,6 +67,11 @@ echo "-------------------------------------------"
 while true; do
     echo "------- executing ($(date +%X)) ---------"
     "${SCRIPT}"
+    if [ $? -eq 250 ]; then
+        echo "---- got termination signal, exiting ----"
+        sleep 30
+        exit 0;
+    fi
     if [ $? -eq 100 ]; then
         echo "------- waiting (short) ${SLEEP_TIME_SHORT}s ($(date +%X)) ---------"
         sleep ${SLEEP_TIME_SHORT}

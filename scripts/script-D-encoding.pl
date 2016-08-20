@@ -3,12 +3,24 @@
 use C3TT::Client;
 use CRS::Executor;
 use boolean;
+use sigtrap qw/handler signal_handler normal-signals/;
 
 my $tracker = C3TT::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding', 'encoding');
 my $start = time;
 my $taskcount = 1;
 my $abortion = 0;
+my $termination = 0;
+
+sub signal_handler {
+	$termination = 1;
+}
+
+sub check_exit {
+	my $code = shift;
+	exit($code) unless $termination == 1;
+	exit(250);
+}
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for encoding\n";
@@ -24,7 +36,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	unless (defined($ex)) {
 		$tracker->setTicketFailed($tid, "Encoding script: instantiating job executor failed!");
-		exit;
+		check_exit(1);
 	}
 
 	my $return = 0;
@@ -37,13 +49,13 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$time = time - $time;
 
 	if ($return) {
-		# this is to verbose:
+		# this is too verbose:
 		# $log = join ("\n", $ex->getOutput());
 		# $tracker->addLog($tid, $log);
 
 		$tracker->setTicketDone($tid, "Encoding tasks completed in $time seconds");
 		# indicate short sleep to wrapper script
-		exit(100);
+		check_exit(100);
 	} else {
 		$log = join ("\n", $ex->getErrors());
 		print STDERR "$log\n";
@@ -52,6 +64,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$tracker->setTicketFailed($tid, "Encoding tasks failed!") unless $abortion;
 	}
 }
+
+check_exit(0);
 
 sub checkTicketStatus() {
 	my $caller = shift;
