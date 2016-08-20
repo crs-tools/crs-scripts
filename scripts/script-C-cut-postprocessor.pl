@@ -38,7 +38,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $ret = $fuse->checkCut($vid) + $isRepaired;
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
-		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE!');
+		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE! ' . $fuse->getCutError());
 		die ('CUTTING INCOMPLETE!');
 	}
 	# check intro, gather duration

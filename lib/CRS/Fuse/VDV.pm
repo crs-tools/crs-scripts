@@ -35,19 +35,25 @@ sub getSourceFileLengthInSeconds {
 sub checkCut {
 	my $self = shift;
 	my $vid = shift;
+	$self->{'cutError'} = 'no VID given';
 	return 0 unless defined($vid);
+	$self->{'cutError'} = 'no mount for VID';
 	return 0 unless $self->isVIDmounted($vid);
 	my $p = $self->getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($self->{debug});
 	my $t = qx ( cat "$p/inframe" );
+	$self->{'cutError'} = 'inframe undefined or zero';
 	return 0 unless defined($t) && ($t > 0);
 	print "checking mark OUT of event $vid\n" if defined($self->{debug});
 	$t = qx ( cat "$p/outframe" );
+	$self->{'cutError'} = 'outframe undefined or zero';
 	return 0 unless defined($t) && ($t > 0);
 	print "checking virtual files of event $vid\n" if defined($self->{debug});
 	$t = "$p/cut-complete.dv";
+	$self->{'cutError'} = 'cut-complete.dv is missing';
 	return 0 unless (-f$t);
 	### TODO verfuegbarkeit des quellmaterials pruefen -> erweiterung von fuse-vdv
+	$self->{'cutError'} = '';
 	return 1;
 }
 

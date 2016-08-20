@@ -37,22 +37,29 @@ sub getSourceFileLengthInSeconds {
 
 sub checkCut {
 	my ($self, $vid) = @_;
+	$self->{'cutError'} = 'no VID given';
 	return 0 unless defined($vid);
 	my $p = $self->getMountPath($vid);
 	print "checking mark IN of event $vid\n" if defined($self->{debug});
+	$self->{'cutError'} = 'no inframe file';
 	return 0 unless ( -r "$p/inframe" );
 	my $t = qx ( cat "$p/inframe" );
 	chop $t;
+	$self->{'cutError'} = 'inframe unreadable or zero';
 	return 0 unless defined($t) && ($t > 0);
 	print "checking mark OUT of event $vid\n" if defined($self->{debug});
+	$self->{'cutError'} = 'no outframe file';
 	return 0 unless ( -r "$p/outframe" );
 	$t = qx ( cat "$p/outframe" );
 	chop $t;
+	$self->{'cutError'} = 'outframe unreadable or zero';
 	return 0 unless defined($t) && ($t > 0);
 	print "checking virtual files of event $vid\n" if defined($self->{debug});
 	$t = "$p/uncut.ts";
+	$self->{'cutError'} = 'uncut.ts doesnt exist';
 	return 0 unless (-f$t);
 	### TODO verfuegbarkeit des quellmaterials pruefen -> erweiterung von fuse-ts
+	$self->{'cutError'} = '';
 	return 1;
 }
 

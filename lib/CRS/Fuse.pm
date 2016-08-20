@@ -33,6 +33,7 @@ sub new {
 
     # check if some defaults are replaced
     $self->{'fps'} = $self->{'Capture.FPS'} if defined $self->{'Capture.FPS'};
+    $self->{'cutError'} = '';
 
     return $self;
 }
@@ -191,6 +192,11 @@ sub getCustomFile {
 			return $dir;
 		}
 	}
+}
+
+sub getCutError {
+	my $self = shift;
+	return $self->{'cutError'};
 }
 
 1;
