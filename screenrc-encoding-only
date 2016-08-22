@@ -10,14 +10,14 @@ sessionname tracker-scripts-encoding
 hardstatus alwayslastline
 hardstatus string '%{= kG}%-Lw%{= kW}%50> %n%f* %t%{= kG}%+Lw%< %{= kG}'
 
-screen -t D-encoding                 bash -c '. tracker-profile.sh; ./bin/crs_run script-D-encoding.pl'
-screen -t D2-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
-screen -t D3-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
-screen -t D4-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
-screen -t D5-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
-screen -t D6-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
-screen -t D7-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
-screen -t D8-encoding                 bash -c '. tracker-profile.sh; echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D-encoding                 bash -c './bin/crs_run script-D-encoding.pl'
+screen -t D2-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D3-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D4-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D5-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D6-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D7-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
+screen -t D8-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
 
 screen -t X-help                     bash -c 'echo -e "\nThis screen has multiple tabs opened, whith each running one encoding worker. \n\nIMPORTANT: only one worker is enabled by default!\n\n Use <Ctrl+a> <number> to switch to one of these tabs. The tabs run the following scripts:\n Tab 0: D-encoding\n Tab 1: D2-encoding\n Tab 2: D3-encoding\n Tab 3: D4-encoding\n Tab 4: D5-encoding\n Tab 5: D6-encoding\n Tab 6: D7-encoding\n Tab 7: D8-encoding\n Tab 8: this help\n\nQuit everything with <Ctrl+a> :quit <Return>\n"; cat '
 

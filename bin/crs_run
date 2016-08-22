@@ -76,7 +76,7 @@ while true; do
         continue
     fi
 
-    echo "------- executing ($(date +%X)) ---------"
+    echo "------- executing ($(date +%X)), talking to tracker instance ${CRS_TRACKER} ---------"
     "${SCRIPT}" $@
     if [ $? -eq 250 ]; then
         echo "---- got termination signal, exiting ----"
