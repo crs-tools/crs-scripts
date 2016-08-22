@@ -4,7 +4,7 @@ use strict;
 use C3TT::Client;
 use boolean;
 
-# Call this script with secret and token as env variable!
+# Call this script with crs_run, it will only execute once
 
 my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
 
@@ -57,11 +57,15 @@ foreach (@$tickets) {
 
 	my $cmd = $props->{'Record.MountCmd'};
 
-	# TODO create mount directory, for now assume it is the same machine and directories exist 
-	# from previous activity
-
+	# create mount directory
+	my $fuse = CRS::Fuse->new($props) or die 'Fuse lib is missing';
+	my $mntpath = $fuse->getMountPath($vid) or die 'Cannot get mount path';
+	print " creating directory '$mntpath' \n";
+	qx / mkdir -p "$mntpath" / or die 'Cannot create mount directory';
+	
 	print "  executing '$cmd'\n";
 	qx / $cmd /;
 
 }
+exit (250);
 
