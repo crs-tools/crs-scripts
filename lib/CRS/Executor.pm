@@ -70,6 +70,7 @@ sub new {
 
 	$self->{locenc} = 'ascii';
 	$self->{locenc} = `locale charmap`;
+	$self->{bogusmode} = 0;
 	
 	$self->{outfilemap} = {};
 	$self->{tmpfilemap} = {};
@@ -155,6 +156,8 @@ sub replacequotes {
 # search a file
 sub check_file {
 	my ($self, $name, $type) = @_;
+
+	return ($name, FILE_OK) if $self->{bogusmode} eq 1;
 
 	# executable lookup
 	if ($type eq 'exe') {
@@ -395,6 +398,28 @@ sub execute {
 	$self->{filter} = $filter if defined($filter);
 	$self->{filter} = 'encoding' unless defined($filter);
 	return $self->task_loop();
+}
+
+sub printParsedCommands {
+	my $self = shift;
+
+	$self->{bogusmode} = 1;
+
+	my @tasks = ( ) ;
+	foreach(@{$self->{job}->{tasks}}) {
+		foreach(@{$_->{task}}) {
+			push @tasks, $_;
+		}
+	}
+
+	my $num_tasks = scalar @tasks;
+	TASK: for (my $task_id = 0; $task_id < $num_tasks; ++$task_id) {
+
+		# parse XML and print cmd
+		my $cmd = $self->parse_cmd($tasks[$task_id]->{option});
+		$self->print ("task " . ($task_id + 1) . " (type ". $tasks[$task_id]->{type} .") of $num_tasks has command:\n\n$cmd\n\n");
+	}
+	$self->{bogusmode} = 0;
 }
 
 sub getOutput {
