@@ -268,7 +268,7 @@ sub parse_cmd {
 		}
 		next unless defined($cmdpart);
 
-		if ($cmdpart =~ m{[ \[\]\(\)\s]}o) {
+		if ($cmdpart =~ m{[ \[\]\(\)\s\|]}o) {
 			# escape or remove existing quotes
 			$cmdpart = replacequotes($cmdpart) if $cmdpart =~ m{"}o;
 			# replace $ in cmds
