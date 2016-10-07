@@ -46,6 +46,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
 	$auphonicflag = 'no' unless (defined ($props->{'Processing.Auphonic.Enable'}));
 	$auphonicflag = $props->{'Processing.Auphonic.Enable'} if (defined ($props->{'Processing.Auphonic.Enable'}) && $auphonicflag eq 'yes');
+	$reuseaudioflag = $props->{'Processing.Auphonic.ReuseProduction'} if (defined ($props->{'Processing.Auphonic.ReuseProduction'}) && $auphonicflag eq 'yes');
 
 	if ($auphonicflag ne 'yes') {
 		my $jobfile = $tracker->getJobFile($tid);
@@ -98,6 +99,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	if (defined($oldMD5) && defined($newMD5) && $oldMD5 eq $newMD5) {
 		$isIdentical = 1;
 		print "source file did not change, not repeating productions\n";
+	}
+	if ($reuseaudioflag eq 'yes') {
+		$isIdentical = 1;
+		print "reuse audio track requested, skipping authonic upload\n";
 	}
 
 	# auphonic authentication via token - the token is stored as a project property in the tracker
