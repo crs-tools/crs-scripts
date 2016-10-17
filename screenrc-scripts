@@ -13,7 +13,7 @@ hardstatus string '%{= kG}%-Lw%{= kW}%50> %n%f* %t%{= kG}%+Lw%< %{= kG}'
 screen -t A-recording-scheduler      bash -c './bin/crs_run script-A-recording-scheduler.pl'
 screen -t B-mount4cut                bash -c './bin/crs_run script-B-mount4cut.pl'
 screen -t C-cut-postprocessor        bash -c './bin/crs_run script-C-cut-postprocessor.pl'
-screen -t D-encoding                 bash -c './bin/crs_run script-D-encoding.pl'
+screen -t D-encoding                 bash -c 'echo press CTRL-D to activate this worker, CTRL-C to close tab. ; cat ; ./bin/crs_run script-D-encoding.pl'
 # legacy:
 #screen -t E-tagging                  bash -c './bin/crs_run script-E-tagging.pl'
 
