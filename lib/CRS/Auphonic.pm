@@ -320,6 +320,9 @@ sub downloadResult {
 	$curl->setopt(CURLOPT_TIMEOUT, 1800);
 
 	# set progress callback
+	$self->{dl} = 0;
+	$self->{ul} = 0;
+	$self->{lastprogress} = 0;
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_NOPROGRESS, 0);
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_PROGRESSFUNCTION, \&progress_callback);
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_PROGRESSDATA, $self);
