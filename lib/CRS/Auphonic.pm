@@ -319,6 +319,11 @@ sub downloadResult {
 	$curl->setopt(CURLOPT_CONNECTTIMEOUT, 5);
 	$curl->setopt(CURLOPT_TIMEOUT, 1800);
 
+	# set progress callback
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_NOPROGRESS, 0);
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_PROGRESSFUNCTION, \&progress_callback);
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_PROGRESSDATA, $self);
+
 	# open output file
 	open OUTPUT, ">$dest" or die "Cannot open '$dest'!\n";
 	$curl->setopt(CURLOPT_FILE, \*OUTPUT);
