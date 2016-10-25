@@ -46,6 +46,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
 	$auphonicflag = 'no' unless (defined ($props->{'Processing.Auphonic.Enable'}));
 	$auphonicflag = $props->{'Processing.Auphonic.Enable'} if (defined ($props->{'Processing.Auphonic.Enable'}) && $auphonicflag eq 'yes');
+	my $reuseaudioflag = 'no';
 	$reuseaudioflag = $props->{'Processing.Auphonic.ReuseProduction'} if (defined ($props->{'Processing.Auphonic.ReuseProduction'}) && $auphonicflag eq 'yes');
 
 	if ($auphonicflag ne 'yes') {
