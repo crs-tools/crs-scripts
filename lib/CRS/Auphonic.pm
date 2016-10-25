@@ -212,6 +212,10 @@ sub startProduction {
 	my $file = shift;
 	my $title = shift;
 
+	$self->{dl} = 0;
+	$self->{ul} = 0;
+	$self->{lastprogress} = 0;
+
 	unless (-e $file) {
 		$self->{error} = "Input file '$file' not existent";
 		return;
@@ -252,6 +256,11 @@ sub startProduction {
 	my $body;
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_WRITEDATA,\$body);
 
+	# set progress callback
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_NOPROGRESS, 0);
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_PROGRESSFUNCTION, \&progress_callback);
+	$curl->setopt(WWW::Curl::Easy::CURLOPT_PROGRESSDATA, $self);
+
 	# execute
 	my $retcode = $curl->perform;
 	my $httpcode = $curl->getinfo(CURLINFO_HTTP_CODE);
@@ -268,6 +277,25 @@ sub startProduction {
 
 	# save http-error otherwise
 	$self->{error} = "Start production returned $httpcode and error is '" .$curl->errbuf;
+	return undef;
+}
+
+sub progress_callback {
+	my ($self,$dltotal,$dlnow,$ultotal,$ulnow) = @_;
+	return 0 if ($dlnow < ($self->{dl} + 2**24) && $ulnow < $self->{ul} + 2**24 && time() < $self->{lastprogress} + 5);
+
+	$self->{dl} = $dlnow;
+	$self->{ul} = $ulnow;
+	$self->{lastprogress} = time();
+	my $dratio = '';
+	$dratio = sprintf "(%2d%%)", 100*$dlnow/$dltotal if $dltotal > 0;
+	my $uratio = '';
+	$uratio = sprintf "(%2d%%)", 100*$ulnow/$ultotal if $ultotal > 0;
+	$dlnow /= 1024*1024;
+	$ulnow /= 1024*1024;
+
+	printf "DL: %8d MB %s   UL: %8d MB %s\n", $dlnow, $dratio, $ulnow, $uratio;
+	return 0;
 }
 
 sub downloadResult {
