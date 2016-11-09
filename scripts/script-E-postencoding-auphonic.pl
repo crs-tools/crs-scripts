@@ -167,6 +167,16 @@ foreach (@$tickets) {
 	my $vid = $props->{'Fahrplan.ID'};
 	print "got ticket # $tid for event $vid\n";
 
+	my $auphonicflag = 'no';
+	$auphonicflag = $props->{'Processing.UseAuphonic'} if defined ($props->{'Processing.UseAuphonic'});
+	$auphonicflag = 'no' unless (defined ($props->{'Processing.Auphonic.Enable'}));
+	$auphonicflag = $props->{'Processing.Auphonic.Enable'} if (defined ($props->{'Processing.Auphonic.Enable'}) && $auphonicflag eq 'yes');
+
+	if ($auphonicflag ne 'yes') {
+		# in the case of postencoding without Auphonic this ticket is currently tagged by another worker script. dont touch it.
+		next;
+	}
+
 	# auphonic login token and uuids of the auphonic productions
 	my $auphonicToken = $props->{'Processing.Auphonic.Token'};
 	if (!defined($auphonicToken)) {
