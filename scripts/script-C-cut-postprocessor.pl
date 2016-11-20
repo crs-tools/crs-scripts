@@ -42,7 +42,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		die ('CUTTING INCOMPLETE!');
 	}
 	# check intro, gather duration
-	if (defined($props->{'Processing.Path.Intros'})) {
+	if (defined($props->{'Processing.Path.Intros'}) && length $props->{'Processing.Path.Intros'} > 0) {
 		if (!defined($intropath)) {
 			$tracker->setTicketFailed($tid, 'INTRO MISSING!');
 			die ('INTRO MISSING!');
@@ -54,6 +54,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 				last;
 			}
 		}
+	} else {
+		undef $intropath;
 	}
 
 	my ($in, $out, $inseconds, $outseconds) = (0, undef, 0, undef);
