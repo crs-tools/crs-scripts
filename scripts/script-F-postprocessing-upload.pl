@@ -2,6 +2,7 @@
 
 use C3TT::Client;
 use boolean;
+use Sys::Hostname;
 
 my $tracker = C3TT::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing');
@@ -19,15 +20,14 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		exit(100);
 	}
 
-	# hacky way to check for slave ticket:
-	if (defined($props->{'Publishing.Upload.SkipSlaves'}) &&
-			($props->{'Publishing.Upload.SkipSlaves'} eq '1' || $props->{'Publishing.Upload.SkipSlaves'} eq 'yes') &&
-			$props->{'Processing.UseAuphonic'} ne 'yes' ) {
-
-		print "\nskipping file because it belongs to a slave ticket!\n";
-		sleep 1;
-		$tracker->setTicketDone($tid, 'Encoding postprocessor: upload skipped, slave ticket.');
-		exit(100);
+	if (defined($props->{'Publishing.Upload.SkipSlaves'}) && $props->{'EncodingProfile.IsMaster'} ne 'yes') {
+		my $hostname = hostname;
+                if (defined($hostname) && index(',' . $props->{'Publishing.Upload.SkipSlaves'} . ',', ",$hostname,") >= 0) {
+			print "\nskipping file upload because it belongs to a slave ticket and this worker is in the skiplist!\n";
+			sleep 1;
+			$tracker->setTicketDone($tid, 'Encoding postprocessor: upload skipped, slave ticket.');
+			exit(100);
+		}
 	}
 
 	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Fahrplan.ID'} . 
