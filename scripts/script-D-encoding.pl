@@ -2,11 +2,11 @@
 
 use C3TT::Client;
 use CRS::Executor;
+use Proc::ProcessTable;
 use boolean;
 use sigtrap qw/handler signal_handler normal-signals/;
 
 my $tracker = C3TT::Client->new();
-my $ticket = $tracker->assignNextUnassignedForState('encoding', 'encoding');
 my $start = time;
 my $taskcount = 1;
 my $abortion = 0;
@@ -21,6 +21,25 @@ sub check_exit {
 	exit($code) unless $termination == 1;
 	exit(250);
 }
+
+sub check_voctomix {
+	my $t = new Proc::ProcessTable;
+	foreach $p ( @{$t->table} ){
+		my $cmd = $p->cmndline;
+		if ($cmd =~ /python.*voctocore.py/) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+if (check_voctomix()) {
+	print "\n\n Voctomix detected! NOT encoding!\n\n";
+	sleep 5;
+	exit(0);
+}
+
+my $ticket = $tracker->assignNextUnassignedForState('encoding', 'encoding');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for encoding\n";
