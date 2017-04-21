@@ -40,16 +40,18 @@ echo "Started on:  $(date +%c)"
 echo "-------------------------------------------"
 
 CONFIGFILE=/etc/default/crs-worker
-LOCALFILE="${SCRIPT_PATH}/tracker-profile.sh"
+LOCALFILE="${LOCALFILE:-${SCRIPT_PATH}/tracker-profile.sh}"
 
 ##### BEGIN WHILE LOOP #####
 while true; do
 
 
     if [ -r "${CONFIGFILE}" ] ; then
+        echo "Reading config from ${CONFIGFILE}"
         . "${CONFIGFILE}"
     fi
     if [ -r "${LOCALFILE}" ] ; then
+        echo "Reading config from ${LOCALFILE}"
         . "${LOCALFILE}"
     fi
 
