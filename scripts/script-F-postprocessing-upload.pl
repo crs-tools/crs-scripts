@@ -20,6 +20,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		exit(100);
 	}
 
+	if (defined($props->{'Fahrplan.GUID'}) && $props->{'Fahrplan.GUID'} =~ /^FIXME/i) {
+		print "Ticket has FIXME GUID!\n\n";
+		$tracker->setTicketFailed($tid, 'Recording has invalid Fahrplan.GUID!');
+		exit(100);
+	}
+
 	if (defined($props->{'Publishing.Upload.SkipSlaves'}) && $props->{'EncodingProfile.IsMaster'} ne 'yes') {
 		my $hostname = hostname;
                 if (defined($hostname) && index(',' . $props->{'Publishing.Upload.SkipSlaves'} . ',', ",$hostname,") >= 0) {
