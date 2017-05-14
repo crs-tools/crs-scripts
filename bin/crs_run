@@ -80,15 +80,16 @@ while true; do
 
     echo "------- executing ($(date +%X)), talking to tracker instance ${CRS_TRACKER} ---------"
     "${SCRIPT}" $@
-    if [ $? -eq 250 ]; then
+    EC=$?
+    if [ $EC -eq 250 ]; then
         echo "---- got termination signal, exiting ----"
         sleep 30
         break;
     fi
-    if [ $? -eq 100 ]; then
+    if [ $EC -eq 100 ]; then
         echo "------- waiting (short) ${SLEEP_TIME_SHORT}s ($(date +%X)) ---------"
         sleep ${SLEEP_TIME_SHORT}
-    else if [ $? -eq 200 ]; then
+    else if [ $EC -eq 200 ]; then
             echo "------- waiting (long) ${SLEEP_TIME_LONG}s ($(date +%X)) ---------"
             sleep ${SLEEP_TIME_LONG}
         else
