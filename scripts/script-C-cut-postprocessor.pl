@@ -25,7 +25,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $fuse;
 	my $intropath;
-	my $introduration;
+	my $introduration = 0;
 
 	if ($container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
@@ -91,9 +91,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$props{'Record.Cutout'} = $out if (defined($out));
 	$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
 
-	# (TODO: rethink this behaviour)
-	# do NOT override project-wide setting:
-	$props{'Processing.Duration.Intro'} = $introduration if (defined($introduration) && !defined($props->{'Processing.Duration.Intro'}));
+	$props{'Processing.Duration.Intro'} = $introduration;
 
 	$tracker->setTicketProperties($tid, \%props);
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
