@@ -19,7 +19,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $replacement = $props->{'Record.SourceReplacement'};
 	my $isRepaired = 0;
-	$isRepaired = 1 if defined($replacement) && $replacement ne '';
+	$isRepaired = 1 if ((defined($replacement) && $replacement ne '') 
+		|| (defined($props->{'Fahrplan.VideoDownloadURL'} && $props->{'Fahrplan.VideoDownloadURL'} ne ''));
 	my $container = $props->{'Record.Container'};
 	$container = 'DV' unless defined($container);
 
