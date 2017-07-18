@@ -26,14 +26,17 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $fuse;
 	my $intropath;
+	my $outropath;
 	my $introduration = 0;
 
 	if ($container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
 		$intropath = $fuse->getIntro('dv', $vid);
+		$outropath = $fuse->getOutro('dv', $vid);
 	} else {
 		$fuse = CRS::Fuse::TS->new($props);
 		$intropath = $fuse->getIntro('ts', $vid);
+		$outropath = $fuse->getOutro('ts', $vid);
 	}
 
 	my $ret = $fuse->checkCut($vid) + $isRepaired;
@@ -57,6 +60,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		}
 	} else {
 		undef $intropath;
+	}
+
+	# check outro
+	if (defined($props->{'Processing.Path.Outro'}) && length $props->{'Processing.Path.Outro'} > 0) {
+		if (!defined($outropath)) {
+			$tracker->setTicketFailed($tid, 'OUTRO MISSING!');
+			die ('OUTRO MISSING!');
+		}
+	} else {
+		undef $outropath;
 	}
 
 	my ($in, $out, $inseconds, $outseconds) = (0, undef, 0, undef);
@@ -93,6 +106,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
 
 	$props{'Processing.Duration.Intro'} = $introduration;
+	$props{'Processing.File.Intro'} = $intropath if (defined($intropath));
+	$props{'Processing.File.Outro'} = $outropath if (defined($outropath));
 
 	$tracker->setTicketProperties($tid, \%props);
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
