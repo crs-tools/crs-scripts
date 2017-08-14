@@ -144,7 +144,7 @@ sub replacequotes {
     # contains quotes
     if ($^O eq 'linux') {
         # escape them on Linux
-        $toquote =~ s{'}{\\'}og;
+        $toquote =~ s{'}{'\\''}og;
     } else {
         # strip them
         $toquote =~ s{"}{}og;
