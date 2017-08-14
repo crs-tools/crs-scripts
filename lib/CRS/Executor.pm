@@ -144,7 +144,7 @@ sub replacequotes {
     # contains quotes
     if ($^O eq 'linux') {
         # escape them on Linux
-        $toquote =~ s{"}{\\"}og;
+        $toquote =~ s{'}{\\'}og;
     } else {
         # strip them
         $toquote =~ s{"}{}og;
@@ -273,17 +273,15 @@ sub parse_cmd {
 
 		if ($cmdpart =~ m{[ \[\]\(\)\s\|]}o) {
 			# escape or remove existing quotes
-			$cmdpart = replacequotes($cmdpart) if $cmdpart =~ m{"}o;
-			# replace $ in cmds
-			$cmdpart =~ s/\$/\\\$/g;
-			# quote everything with regular double quotes
+			$cmdpart = replacequotes($cmdpart) if $cmdpart =~ m{'}o;
+			# quote everything
 			if ($cmd =~ m{=$}o) {
-				$cmd .= '"'. $cmdpart .'"';
+				$cmd .= "'". $cmdpart ."'";
 			} else {
-				$cmd .= ' "'. $cmdpart .'"';
+				$cmd .= " '". $cmdpart ."'";
 			}
 		} else {
-			$cmdpart = replacequotes($cmdpart) if $cmdpart =~ m{"}o;
+			$cmdpart = replacequotes($cmdpart) if $cmdpart =~ m{'}o;
 			if ($cmd =~ m{=$}o) {
 				$cmd .= $cmdpart;
 			} else {
