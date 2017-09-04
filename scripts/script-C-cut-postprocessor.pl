@@ -28,6 +28,9 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $intropath;
 	my $outropath;
 	my $introduration = 0;
+	my $fail = 0;
+	my $cutmarksvalid = 0;
+	my $failreason = '';
 
 	if ($container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
@@ -42,20 +45,23 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $ret = $fuse->checkCut($vid) + $isRepaired;
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
-		$tracker->setTicketFailed($tid, 'CUTTING INCOMPLETE! ' . $fuse->getCutError());
-		die ('CUTTING INCOMPLETE!');
+		$failreason = 'CUTTING INCOMPLETE! ' . $fuse->getCutError();
+		$fail = 1;
+	} else {
+		$cutmarksvalid = 1;
 	}
 	# check intro, gather duration
 	if (defined($props->{'Processing.Path.Intros'}) && length $props->{'Processing.Path.Intros'} > 0) {
 		if (!defined($intropath)) {
-			$tracker->setTicketFailed($tid, 'INTRO MISSING!');
-			die ('INTRO MISSING!');
-		}
-		my @ffprobe = qx ( ffprobe -i "$intropath" -sexagesimal -print_format flat -show_format );
-		foreach (@ffprobe) {
-			if ( $_ =~ /^format.duration="(.+)"/ ) {
-				$introduration = $1;
-				last;
+			$failreason = 'INTRO MISSING!';
+			$fail = 1;
+		} else {
+			my @ffprobe = qx ( ffprobe -i "$intropath" -sexagesimal -print_format flat -show_format );
+			foreach (@ffprobe) {
+				if ( $_ =~ /^format.duration="(.+)"/ ) {
+					$introduration = $1;
+					last;
+				}
 			}
 		}
 	} else {
@@ -65,8 +71,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	# check outro
 	if (defined($props->{'Processing.Path.Outro'}) && length $props->{'Processing.Path.Outro'} > 0) {
 		if (!defined($outropath)) {
-			$tracker->setTicketFailed($tid, 'OUTRO MISSING!');
-			die ('OUTRO MISSING!');
+			$failreason = 'OUTRO MISSING!';
+			$fail = 1;
 		}
 	} else {
 		undef $outropath;
@@ -90,26 +96,35 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		}
 	}
 
-	my $diffseconds;
-	$diffseconds = $outseconds - $inseconds if (defined($outseconds) && defined($inseconds));
-	$inseconds =~ s/\.0+$// if defined($inseconds);
-	$diffseconds =~ s/\.0+$// if defined($diffseconds);
-	$outseconds =~ s/\.0+$// if defined($outseconds);
-	$inseconds =~ s/0+$// if ($inseconds =~ /\.[0-9]+/);
-	$diffseconds =~ s/0+$// if ($diffseconds =~ /\.[0-9]+/);
-	$outseconds =~ s/0+$// if ($outseconds =~ /\.[0-9]+/);
-	my %props = (
-		'Record.Cutin' => $in, 
-		'Record.Cutinseconds' => $inseconds,
-		'Record.Cutdiffseconds' => $diffseconds);
-	$props{'Record.Cutout'} = $out if (defined($out));
-	$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
+	my %props = ( );
 
-	$props{'Processing.Duration.Intro'} = $introduration;
+	if ($cutmarksvalid > 0) {
+		my $diffseconds = 0;
+		$diffseconds = $outseconds - $inseconds if (defined($outseconds) && defined($inseconds));
+			$inseconds =~ s/\.0+$// if defined($inseconds);
+		$diffseconds =~ s/\.0+$// if defined($diffseconds);
+		$outseconds =~ s/\.0+$// if defined($outseconds);
+		$inseconds =~ s/0+$// if ($inseconds =~ /\.[0-9]+/);
+		$diffseconds =~ s/0+$// if ($diffseconds =~ /\.[0-9]+/);
+		$outseconds =~ s/0+$// if ($outseconds =~ /\.[0-9]+/);
+		$props{'Record.Cutin'} = $in;
+		$props{'Record.Cutinseconds'} = $inseconds;
+		$props{'Record.Cutdiffseconds'} = $diffseconds;
+		$props{'Record.Cutout'} = $out if (defined($out));
+		$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
+	}
+
+	$props{'Processing.Duration.Intro'} = $introduration if (defined($introduration));
 	$props{'Processing.File.Intro'} = $intropath if (defined($intropath));
 	$props{'Processing.File.Outro'} = $outropath if (defined($outropath));
 
 	$tracker->setTicketProperties($tid, \%props);
+
+	if ($fail > 0) {
+		print STDERR "failing ticket because: $failreason\n";
+		$tracker->setTicketFailed($tid, $failreason);
+		die ($failreason);
+	}
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
 	# indicate short sleep to wrapper script
 	exit(100);
