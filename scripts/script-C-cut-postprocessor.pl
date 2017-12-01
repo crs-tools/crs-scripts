@@ -2,10 +2,10 @@
 
 use CRS::Fuse::VDV;
 use CRS::Fuse::TS;
-use C3TT::Client;
+use CRS::Tracker::Client;
 use boolean;
 
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {

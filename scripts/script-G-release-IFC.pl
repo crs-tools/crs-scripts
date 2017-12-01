@@ -1,11 +1,11 @@
 #!/usr/bin/perl -W
 
-use C3TT::Client;
+use CRS::Tracker::Client;
 use POSIX qw(strftime);
 use boolean;
 use Data::Dumper;
 
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding', 'releasing');
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {

@@ -1,14 +1,14 @@
-# C3TT::CLient
+# CRS::Tracker::Client
 #
 # Copyright (c) 2017 Peter Große <pegro@fem-net.de>, all rights reserved
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
-package C3TT::Client;
+package CRS::Tracker::Client;
 
 =head1 NAME
 
-C3TT::Client - Client for interacting with the C3 Ticket Tracker via XML-RPC
+CRS::Tracker::Client - Client for interacting with the Congress Recording System Tracker via XML-RPC
 
 =head1 VERSION
 
@@ -22,9 +22,9 @@ our $VERSION   = '0.5';
 
 Generic usage
 
-    use C3TT::CLient;
+    use CRS::Tracker::Client;
 
-    my $rpc = C3TT::Client->new( $uri, $worker_group_token, $secret );
+    my $rpc = CRS::Tracker::Client->new( $uri, $worker_group_token, $secret );
 
 Call a remote method
 
@@ -32,14 +32,14 @@ Call a remote method
 
 =head1 DESCRIPTION
 
-C3TT::Client is a library for interacting with the C3TT via XML-RPC with automatic encoding 
+CRS::Tracker::Client is a library for interacting with the CRS Tracker via XML-RPC with automatic encoding 
 of all arguments
 
 =head1 METHODS
 
 =head2 new ($url, $worker_group_token, $secret)
 
-Create C3TT:Client object.
+Create CRS::Tracker::Client object.
 
 =cut
 
@@ -72,6 +72,9 @@ sub new {
     $self->{secret} = shift;
 
     if (!defined($self->{url})) {
+        if (!defined($ENV{'CRS_TRACKER'})) {
+            die "no credentials given as parameter or via environment!";
+	}
         ($self->{secret}, $self->{token}, $self->{url}) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'}, $ENV{'CRS_TRACKER'});
     }
 

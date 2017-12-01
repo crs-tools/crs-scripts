@@ -1,7 +1,7 @@
 #!/usr/bin/perl -W
 
 use strict;
-use C3TT::Client;
+use CRS::Tracker::Client;
 use boolean;
 
 # Call this script with crs_run, it will only execute once
@@ -14,7 +14,7 @@ if (!defined($token)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 my $tickets = $tracker->GetTicketsForState('recording', 'finalized');
 my $projectfilter = $ARGV[0];
 

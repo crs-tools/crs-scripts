@@ -2,7 +2,7 @@
 
 use CRS::Auphonic;
 use CRS::Executor;
-use C3TT::Client;
+use CRS::Tracker::Client;
 use boolean;
 use Digest::MD5;
 
@@ -30,7 +30,7 @@ sub getLanguages {
 }
 
 # fetch ticket ready to state postencoding, thus ready to be transmitted to auphonic
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('encoding','postencoding');
 my $didsomething = 0;
 

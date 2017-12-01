@@ -6,7 +6,7 @@ use charnames ':full';
 
 BEGIN { push @INC, '../tracker3.0/lib'; }
 
-use C3TT::Client;
+use CRS::Tracker::Client;
 use CRS::Executor;
 use Sys::Hostname;
 use XML::Simple qw(:strict);
@@ -23,7 +23,7 @@ if (!defined($ticketid)) {
     exit 1;
 }
 
-my $tracker = C3TT::Client->new($base_url, $token, $password) or die "Cannot init tracker";
+my $tracker = CRS::Tracker::Client->new($base_url, $token, $password) or die "Cannot init tracker";
 my $jobxml = $tracker->getJobfile($ticketid);
 my $ex = new CRS::Executor($jobxml);
 $ex->printParsedCommands();

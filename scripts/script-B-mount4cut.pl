@@ -3,7 +3,7 @@
 use strict;
 use CRS::Fuse::VDV;
 use CRS::Fuse::TS;
-use C3TT::Client;
+use CRS::Tracker::Client;
 use boolean;
 
 my ($secret, $token) = ($ENV{'CRS_SECRET'}, $ENV{'CRS_TOKEN'});
@@ -15,7 +15,7 @@ if (!defined($token)) {
 	exit 1;
 }
 
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 

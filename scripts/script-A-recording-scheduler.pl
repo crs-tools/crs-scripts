@@ -2,7 +2,7 @@
 
 use POSIX;
 use CRS::Fuse::VDV;
-use C3TT::Client;
+use CRS::Tracker::Client;
 
 use POSIX qw(strftime);
 use boolean;
@@ -25,7 +25,7 @@ $end_filter->{'Record.EndedBefore'} = strftime('%FT%TZ', gmtime(time - $endpaddi
 
 $|=1;
 
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 
 my $tickets_left = 1;
 

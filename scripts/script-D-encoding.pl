@@ -1,12 +1,12 @@
 #!/usr/bin/perl -W
 
-use C3TT::Client;
+use CRS::Tracker::Client;
 use CRS::Executor;
 use Proc::ProcessTable;
 use boolean;
 use sigtrap qw/handler signal_handler normal-signals/;
 
-my $tracker = C3TT::Client->new();
+my $tracker = CRS::Tracker::Client->new();
 my $start = time;
 my $taskcount = 1;
 my $abortion = 0;
