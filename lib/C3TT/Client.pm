@@ -1,6 +1,6 @@
 # C3TT::CLient
 #
-# Copyright (c) 2013 Peter Große <pegro@fem-net.de>, all rights reserved
+# Copyright (c) 2017 Peter Große <pegro@fem-net.de>, all rights reserved
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
@@ -139,9 +139,11 @@ sub AUTOLOAD {
             print "$@";
             print "!!!!!!!!!!!!!! sleeping ".REMOTE_CALL_SLEEP." s !!!!!!!!!!!!!!\n";
             sleep(REMOTE_CALL_SLEEP);
-            print "\nretrying $nLoop more times";
+            print "\nretrying $nLoop more times, enabling SSL debugging";
+            $Net::SSLeay::trace = 2;
         }
         else {
+            $Net::SSLeay::trace = 0;
             return $r;
         }
     }
