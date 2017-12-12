@@ -175,6 +175,9 @@ sub check_file {
 		if ($name =~ /^(.+:)([^:]+)$/) { # try URL style, e.g. for FFmpeg input syntax
 			$protocol = $1;
 			$alternateName = $2;
+		} elsif ($name =~ /^~/) { # expand leading ~ to users home directory
+			$name =~ s/^~(\w*)/ ( getpwnam( $1 || $ENV{USER} ))[7] /e;
+			$alternateName = $name;
 		}
 		if (not File::Spec->file_name_is_absolute($alternateName)) {
 			$self->fatal ("Non-absolute filename given: '$protocol$name'!");
