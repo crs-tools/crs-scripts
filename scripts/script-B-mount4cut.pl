@@ -27,10 +27,9 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	print "got ticket # $tid for event $vid\n";
 
 	my $container = $props->{'Record.Container'};
-	$container = 'DV' unless defined($container);
 
 	my $fuse;
-	if ($container eq 'DV') {
+	if (defined($container) and $container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
 	} else {
 		$fuse = CRS::Fuse::TS->new($props);
