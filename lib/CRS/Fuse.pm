@@ -95,14 +95,13 @@ sub getPaddedDuration {
 sub getFuseMounts {
 	my $self = shift;
 	return () unless defined($self->{fuse_binary});
-	my $t = qx ( mount | grep ^$self->{fuse_binary} );
-	my @mounts = split("\n", $t);
+
 	my @ret = ();
-	foreach(@mounts) {
-		if ($_ =~ /on\ \/.+\/(\d+)\stype.fuse/) {
-			push(@ret, $1);
-		}
-	}
+	open(IN, '</proc/mounts') or die "cannot open /proc/mounts:$!\n";
+	grep {
+		/^fuse-\w+\ \/.+\/(\d+)\s/ and push (@ret, $1);
+	} (<IN>);
+	close(IN);
 	return @ret;
 }
 
