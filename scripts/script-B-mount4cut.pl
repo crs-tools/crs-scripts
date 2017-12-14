@@ -34,11 +34,20 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	} else {
 		$fuse = CRS::Fuse::TS->new($props);
 	}
-	my $mounted = CRS::Fuse::isVIDmounted($vid);
+
+	my ($in, $out, $inseconds, $outseconds) = ();
+	print "checking if mounted... ";
+	my $mounted = $fuse->isVIDmounted($vid);
 	if ($mounted) {
-		print " already mounted! unmounting... ";
+		print "already mounted! saving cutmarks ... ";
+		if ($fuse->checkCut($vid)) {
+			($in, $out, $inseconds, $outseconds) = $fuse->getCutmarks($vid);
+		}
+		print " got cutmarks: IN $in OUT $out, unmounting... ";
 		$fuse->doFuseUnmount($vid);
 		print "done\n";
+	} else {
+		print "not currently mounted.\n";
 	}
 	print "creating fuse mount for event # $vid\n";
 
@@ -52,6 +61,10 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 
 	my $isRepaired = 0;
 	$isRepaired = 1 if defined($replacement) && $replacement ne '';
+
+	# prepare possible restoration of cutmarks
+	$in = $props->{'Record.Cutin'} unless defined($in);
+	$out = $props->{'Record.Cutout'} unless defined($out);
 
 	# check minimal metadata
 
@@ -100,6 +113,8 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	if (defined($r) && $r) {
 		$tracker->setTicketProperties($tid, \%props2); # when successful, do actually write back properties
 		print "FUSE mount created successfully.\n";
+		# restore cutmarks if available
+		$fuse->setCutmarks($in, $out) if (defined($in) or defined($out));
 		$tracker->setTicketDone($tid, "Mount4cut: FUSE mount created successfully.\n" . $cmd . "\n" . $error);
 		# indicate short sleep to wrapper script
 		exit(100);

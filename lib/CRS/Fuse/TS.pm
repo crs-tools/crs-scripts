@@ -127,18 +127,39 @@ sub getCutmarks {
 	my $p = $self->getMountPath($vid);
 	print "getting mark IN of event $vid\n" if defined($self->{debug});
 	my $i = qx ( cat \"$p/inframe\" );
-	chop($i);
+	chomp($i);
 	print "getting mark OUT of event $vid\n" if defined($self->{debug});
 	my $o = qx ( cat \"$p/outframe\" );
-	chop($o);
+	chomp($o);
 	print "getting mark IN of event $vid\n" if defined($self->{debug});
 	my $it = qx ( cat \"$p/intime\" );
-	chop($it);
+	chomp($it);
 	print "getting mark OUT of event $vid\n" if defined($self->{debug});
 	my $ot = qx ( cat \"$p/outtime\" );
-	chop($ot);
+	chomp($ot);
 
 	return ($i, $o, $it, $ot);
 }
 
+sub setCutmarks {
+	my ($self, $in, $out, undef) = @_;
+	my $vid = $self->{'Fahrplan.ID'};
+
+	my $p = $self->getMountPath($vid);
+	my $infile = "$p/inframe";
+	my $outfile = "$p/outframe";
+
+	if (defined($in)) {
+		print "setting mark IN of event $vid to $in\n" if defined($self->{debug});
+		open(INFILE, '>', $infile) and
+			print INFILE $in and
+			close INFILE;
+	}
+	if (defined($out)) {
+		print "setting mark OUT of event $vid to $out\n" if defined($self->{debug});
+		open(OUTFILE, '>', $outfile) and
+			print OUTFILE $out and
+			close OUTFILE;
+	}
+}
 1;
