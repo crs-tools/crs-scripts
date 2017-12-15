@@ -3,6 +3,7 @@
 use CRS::Auphonic;
 use CRS::Executor;
 use CRS::Tracker::Client;
+use CRS::Paths;
 use boolean;
 use Digest::MD5;
 
@@ -39,6 +40,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 } else {
 	my $tid = $ticket->{id};
 	my $props = $tracker->getTicketProperties($tid);
+	my $paths = CRS::Paths->new($props);
 	my $vid = $props->{'Fahrplan.ID'};
 	print "got ticket # $tid for event $vid\n";
 
@@ -89,7 +91,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	# check if there is already a production and if the file changed since then
 	my $oldMD5 = $props->{'Processing.Auphonic.SourceFileHash'};
-	my $sourcefile = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.".".$props->{'EncodingProfile.Extension'};
+	my $sourcefile = $paths->getPath('Tmp').'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.".".$props->{'EncodingProfile.Extension'};
 	if (! -f $sourcefile) {
 		print STDERR "WARNING: no source file found ('$sourcefile'), possibly repeating production uneccessarily\n";
 		($oldMD5, $sourcefile) = (undef, undef);
@@ -126,7 +128,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	if ($isIdentical == 0) {
 		foreach my $langIndex (keys %languages) {
 			$langIndex += 1; # currently the filename indexes start with 1 and not 0
-			my $audioSrcFile = $props->{'Processing.Path.Tmp'}.'/'.
+			my $audioSrcFile = $paths->getPath('Tmp') .
 				$vid.'-'.$props->{'EncodingProfile.Slug'}.'-audio'.$langIndex.'.ts';
 			print "Starting production for audio track $langIndex\n";
 			my $production = $auphonic->startProduction($auphonicPreset, $audioSrcFile, 
@@ -164,6 +166,7 @@ foreach (@$tickets) {
 	my $ticket = $_;
 	my $tid = $ticket->{id};
 	my $props = $tracker->getTicketProperties($tid);
+	my $paths = CRS::Paths->new($props);
 	my $vid = $props->{'Fahrplan.ID'};
 	print "got ticket # $tid for event $vid\n";
 
@@ -214,7 +217,7 @@ foreach (@$tickets) {
 		$langIndex += 1; # currently the filename indexes start with 1 and not 0
 		my $uuid = $props->{'Processing.Auphonic.ProductionID'.$langIndex}; # existence is checked in previous loop
 
-		my $dest = $props->{'Processing.Path.Tmp'}.'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.
+		my $dest = $paths->getPath('Tmp').$vid.'-'.$props->{'EncodingProfile.Slug'}.
 			'-audio'.$langIndex.'-auphonic.m4a';
 		print "downloading audio track $langIndex from Auphonic... to '$dest'\n";
 		my $auphonic = CRS::Auphonic->new($auphonicToken, $uuid);

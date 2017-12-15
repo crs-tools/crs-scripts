@@ -1,6 +1,7 @@
 #!/usr/bin/perl -W
 
 use CRS::Tracker::Client;
+use CRS::Paths;
 use POSIX qw(strftime);
 use boolean;
 use Data::Dumper;
@@ -15,10 +16,11 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
         my $vid = $ticket->{fahrplan_id};
         print "got ticket # $tid for event $vid\n";
         my $props = $tracker->getTicketProperties($tid);
+	my $paths = CRS::Paths->new($props);
 	#print Dumper($ticket);
 	#print Dumper($props);
 
-	my $sourcepath = $props->{'Processing.Path.Output'};
+	my $sourcepath = $paths->getPath('Output');
 	$sourcepath .= '/' . $vid . '-' . $props->{'EncodingProfile.Slug'} . '.' . $props->{'EncodingProfile.Extension'};
 	my $destpath = $props->{'Releasing.Path'};
 	$destpath .= '/' . $props->{'EncodingProfile.Basename'} . '.' . $props->{'EncodingProfile.Extension'};

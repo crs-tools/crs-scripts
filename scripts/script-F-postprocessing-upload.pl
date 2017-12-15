@@ -1,6 +1,7 @@
 #!/usr/bin/perl -W
 
 use CRS::Tracker::Client;
+use CRS::Paths;
 use boolean;
 use Sys::Hostname;
 
@@ -36,7 +37,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		}
 	}
 
-	my $srcfile = $props->{'Processing.Path.Output'} . "/" . $props->{'Fahrplan.ID'} . 
+	my $paths = CRS::Paths->new($props);
+	my $srcfile = $paths->getPath('Output') . "/" . $props->{'Fahrplan.ID'} . 
 		"-" . $props->{'EncodingProfile.Slug'} . "." . $props->{'EncodingProfile.Extension'};
 	print "checking $srcfile...";
 	if (! -e $srcfile) {

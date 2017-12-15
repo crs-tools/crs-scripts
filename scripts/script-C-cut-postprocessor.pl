@@ -3,6 +3,7 @@
 use CRS::Fuse::VDV;
 use CRS::Fuse::TS;
 use CRS::Tracker::Client;
+use CRS::Paths;
 use boolean;
 
 my $tracker = CRS::Tracker::Client->new();
@@ -14,6 +15,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $tid = $ticket->{id};
 	my $props = $tracker->getTicketProperties($tid);
 	my $vid = $ticket->{fahrplan_id};
+	my $paths = CRS::Paths->new($props);
 	$vid = $props->{'Fahrplan.ID'} if ($vid < 1);
 	print "got ticket # $tid for event $vid\n";
 
@@ -32,7 +34,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $cutmarksvalid = 0;
 	my $failreason = '';
 
-	if ($container eq 'DV') {
+	if (defined($container) and $container eq 'DV') {
 		$fuse = CRS::Fuse::VDV->new($props);
 		$intropath = $fuse->getIntro('dv', $vid);
 		$outropath = $fuse->getOutro('dv', $vid);
@@ -51,7 +53,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$cutmarksvalid = 1;
 	}
 	# check intro, gather duration
-	if (defined($props->{'Processing.Path.Intros'}) && length $props->{'Processing.Path.Intros'} > 0) {
+	my $introconfigpath = $paths->getPath('Intros');
+	if (defined($introconfigpath) && length $introconfigpath > 0) {
 		if (!defined($intropath)) {
 			$failreason = 'INTRO MISSING!';
 			$fail = 1;
@@ -69,7 +72,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	}
 
 	# check outro
-	if (defined($props->{'Processing.Path.Outro'}) && length $props->{'Processing.Path.Outro'} > 0) {
+	my $outroconfigpath = $paths->getPath('Outro');
+	if (defined($outroconfigpath) && length $outroconfigpath > 0) {
 		if (!defined($outropath)) {
 			$failreason = 'OUTRO MISSING!';
 			$fail = 1;
