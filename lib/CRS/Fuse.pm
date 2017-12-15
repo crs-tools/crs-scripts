@@ -15,6 +15,7 @@ $default->{'debug'} = 1;
 use POSIX;
 use DateTime;
 use strict;
+use CRS::Paths;
 
 sub new {
     my $class = shift;
@@ -22,6 +23,7 @@ sub new {
     bless $self;
 
     my $args = shift;
+    my $paths = CRS::Paths->new($args);
 
     # merge defaults and parameters from constructor
     my %cfg = (%{$default}, %{$args});
@@ -31,6 +33,7 @@ sub new {
         $self->{$_} = $cfg{$_};
     }
 
+    $self->{'paths'} = $paths;
     # check if some defaults are replaced
     $self->{'fps'} = $self->{'Capture.FPS'} if defined $self->{'Capture.FPS'};
     $self->{'cutError'} = '';
@@ -108,8 +111,8 @@ sub getFuseMounts {
 sub getMountPath {
 	my ($self, $vid) = @_;
 	return unless defined($vid);
-	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $self->{'Processing.Path.Raw'};
-	my $base = $self->{'Processing.Path.Raw'};
+	my $base = $self->{'paths'}->getPath('Raw');
+	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $base;
 	if (defined($self->{'Project.Slug'}) && defined($self->{'Fahrplan.Room'})) {
 		return $base . '/' . $self->{'Project.Slug'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
 	}
@@ -118,9 +121,9 @@ sub getMountPath {
 
 sub getCapturePath {
 	my ($self, $room) = @_;
-	my $base = $self->{'Processing.Path.Capture'};
+	my $base = $self->{'paths'}->getPath('Capture');
 	if (! -e $base && ! -d $base) {
-		print STDERR "ERROR: Processing.Path.Capture seems to be totally wrong!\n";
+		print STDERR "ERROR: Processing.Path.Capture ('$base') seems to be totally wrong!\n";
 		return;
 	}
 	if (-e -d "$base/$room") {
@@ -156,15 +159,15 @@ sub doFuseUnmount {
 
 sub getIntro {
 	my ($self, $suffix, $id) = @_;
-	my $start = $self->{'Processing.Path.Intros'};
+	my $start = $self->{'paths'}->getPath('Intros');
 	return unless defined $start;
 	return $self->getCustomFile($start, 'intro', $suffix, $id);
 }
 
 sub getOutro {
 	my ($self, $suffix, $id) = @_;
-	my $start = $self->{'Processing.Path.Outro'};
-	$start = $self->{'Processing.Path.Outros'} if(!defined($start));
+	my $start = $self->{'paths'}->getPath('Outro');
+	$start = $self->{'paths'}->getPath('Outros') if (!defined($start));
 	return unless defined $start;
 	return $self->getCustomFile($start, 'outro', $suffix, $id);
 }

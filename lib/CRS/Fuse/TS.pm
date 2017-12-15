@@ -105,9 +105,10 @@ sub doFuseRepairMount {
 
 	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
 	return 0 unless defined($replacement);
-	die "ERROR: no Processing.Path.Repair specified!\n" unless defined $self->{'Processing.Path.Repair'};
 
-	my $repairdir = $self->{'Processing.Path.Repair'};
+	my $repairdir = $self->{'paths'}->getPath('Repair');
+	die "ERROR: no Processing.Path.Repair specified!\n" unless defined $repairdir;
+
 	my $replacementpath = "$repairdir/$replacement";
 	return 0 unless -r $replacementpath;
 	print "replacing FUSE with repaired file $replacementpath*\n" if defined($self->{debug});
