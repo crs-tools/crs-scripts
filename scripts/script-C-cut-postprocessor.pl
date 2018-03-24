@@ -112,10 +112,10 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$diffseconds =~ s/0+$// if ($diffseconds =~ /\.[0-9]+/);
 		$outseconds =~ s/0+$// if ($outseconds =~ /\.[0-9]+/);
 		$props{'Record.Cutin'} = $in;
-		$props{'Record.Cutinseconds'} = $inseconds;
-		$props{'Record.Cutdiffseconds'} = $diffseconds;
+		$props{'Record.Cutinseconds'} = sprintf("%0.4f", $inseconds);
+		$props{'Record.Cutdiffseconds'} = sprintf("%0.4f", $diffseconds);
 		$props{'Record.Cutout'} = $out if (defined($out));
-		$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
+		$props{'Record.Cutoutseconds'} = sprintf("%0.4f", $outseconds) if (defined($outseconds));
 	}
 
 	$props{'Processing.Duration.Intro'} = $introduration if (defined($introduration));
