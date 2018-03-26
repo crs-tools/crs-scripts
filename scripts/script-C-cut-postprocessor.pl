@@ -5,6 +5,7 @@ use CRS::Fuse::TS;
 use CRS::Tracker::Client;
 use CRS::Paths;
 use boolean;
+use bignum;
 
 my $tracker = CRS::Tracker::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
@@ -59,7 +60,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			$failreason = 'INTRO MISSING!';
 			$fail = 1;
 		} else {
-			my @ffprobe = qx ( ffprobe -i "$intropath" -sexagesimal -print_format flat -show_format );
+			my @ffprobe = qx ( ffprobe -i "$intropath" -print_format flat -show_format );
 			foreach (@ffprobe) {
 				if ( $_ =~ /^format.duration="(.+)"/ ) {
 					$introduration = $1;
@@ -103,22 +104,24 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my %props = ( );
 
 	if ($cutmarksvalid > 0) {
+		# Until here, the time based cutmarks are strings. Now we need to
+		# - calculate with them
+		# - use a canonical form (e.g. no trailing zeroes).
+		# This is done by using bignum, forcing numerical treatment (adding zero)
+		# and later forcing string conversion when assigning property values.
+
+		$inseconds = 0 + $inseconds;
+		$outseconds = 0 + $outseconds;
 		my $diffseconds = 0;
-		$diffseconds = $outseconds - $inseconds if (defined($outseconds) && defined($inseconds));
-			$inseconds =~ s/\.0+$// if defined($inseconds);
-		$diffseconds =~ s/\.0+$// if defined($diffseconds);
-		$outseconds =~ s/\.0+$// if defined($outseconds);
-		$inseconds =~ s/0+$// if ($inseconds =~ /\.[0-9]+/);
-		$diffseconds =~ s/0+$// if ($diffseconds =~ /\.[0-9]+/);
-		$outseconds =~ s/0+$// if ($outseconds =~ /\.[0-9]+/);
+		$diffseconds = 0 + $outseconds - $inseconds if (defined($outseconds) && defined($inseconds));
 		$props{'Record.Cutin'} = $in;
-		$props{'Record.Cutinseconds'} = $inseconds;
-		$props{'Record.Cutdiffseconds'} = $diffseconds;
+		$props{'Record.Cutinseconds'} = "" . $inseconds;
+		$props{'Record.Cutdiffseconds'} = "" . $diffseconds;
 		$props{'Record.Cutout'} = $out if (defined($out));
-		$props{'Record.Cutoutseconds'} = $outseconds if (defined($outseconds));
+		$props{'Record.Cutoutseconds'} = "" . $outseconds if (defined($outseconds));
 	}
 
-	$props{'Processing.Duration.Intro'} = $introduration if (defined($introduration));
+	$props{'Processing.Duration.Intro'} = "" . (0 + $introduration) if (defined($introduration));
 	$props{'Processing.File.Intro'} = $intropath if (defined($intropath));
 	$props{'Processing.File.Outro'} = $outropath if (defined($outropath));
 
