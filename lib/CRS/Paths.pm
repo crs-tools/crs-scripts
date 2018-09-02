@@ -19,7 +19,7 @@ sub getPath {
 	my ($self, $pathname, $default, undef) = @_;
 
 	return unless defined($pathname);
-	return $self->{$pathname} if (defined($self->{$pathname}));
+	return $self->{$pathname} if (index($pathname, ".") != -1 && defined($self->{$pathname}));
 	return $self->{'Processing.Path.'.$pathname} if (defined($self->{'Processing.Path.'.$pathname}));
 
 	return $default unless defined($self->{'Processing.BasePath'});
