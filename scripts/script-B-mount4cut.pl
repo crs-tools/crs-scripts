@@ -20,6 +20,23 @@ my $tracker = CRS::Tracker::Client->new();
 my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
+	prepareTicket($ticket);
+} else {
+	print "no tickets currently recorded.\n";
+	my $tickets = $tracker->getAssignedForState('recording', 'preparing');
+	if (!($tickets) || 0 == scalar(@$tickets)) {
+		print "no tickets currently preparing.\n";
+		exit;
+	}
+	foreach (@$tickets) {
+		my $ticket = $_;
+		print "revisiting files of ticket #" . $ticket->{id} . "\n";
+		prepareTicket($ticket);
+	}
+}
+
+sub prepareTicket {
+	my $ticket = shift;
 	my $tid = $ticket->{id};
 	my $props = $tracker->getTicketProperties($tid);
 	my $vid = $ticket->{fahrplan_id};
@@ -118,11 +135,12 @@ if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 		$tracker->setTicketDone($tid, "Mount4cut: FUSE mount created successfully.\n" . $cmd . "\n" . $error);
 		# indicate short sleep to wrapper script
 		exit(100);
+	} elsif ($error eq 'files missing') {
+		print "Mount4cut: WARNING: could not create FUSE mount because of missing files. Leaving ticket in preparing state\n";
+		sleep 1;
 	} else {
 		print "Mount4cut: ERROR: could not create FUSE mount!\n";
 		$tracker->setTicketFailed($tid, "Mount4cut: ERROR: could not create FUSE mount!\n" . $cmd . "\n" . $error);
 	}
-} else {
-	print "no tickets currently recorded.\n";
 }
 
