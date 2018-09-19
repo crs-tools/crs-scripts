@@ -89,6 +89,25 @@ sub doFuseMount {
 	my $capdir = $self->getCapturePath($room);
 	my $p = $self->getMountPath($vid);
 	return 0 unless defined($p);
+
+	# check existence of files
+	my @filenames = sort <'$capdir/$prefix-*.ts'>;
+	my $count = 0;
+	foreach (@filenames) {
+		if ($_ gt $capdir.'/'.$prefix.'-'.$starttime) {
+			if ($count == 0) {
+				$count = 2;
+			} else {
+				$count++;
+			}
+		}
+	}
+
+	if ($count < $files) {
+		print STDERR "found only $count files instead of $files needed files!\n";
+		return (0, 'files missing');
+	}
+
 	print "creating mount path \"$p\"\n" if defined($self->{debug});
 	my $log = join "\n", qx ( mkdir -p "$p" 2>&1 );
 	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"$prefix-\" c=\"$capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
