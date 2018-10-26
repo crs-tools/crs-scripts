@@ -92,15 +92,23 @@ sub doFuseMount {
 
 	# check existence of files
 	my @filenames = sort <'$capdir/$prefix-*.ts'>;
+	my $thresholdstring = $capdir.'/'.$prefix.'-'.$starttime;
+	print "checking files with pattern '$capdir/$prefix-*.ts' and comparing against '$thresholdstring' \n";
+	my $iteration = 0;
 	my $count = 0;
 	foreach (@filenames) {
-		if ($_ gt $capdir.'/'.$prefix.'-'.$starttime) {
+		if ($_ gt $thresholdstring) {
 			if ($count == 0) {
-				$count = 2;
+				if ($iteration > 0) {
+					$count = 2;
+				} else {
+					$count = 1;
+				}
 			} else {
 				$count++;
 			}
 		}
+		$iteration++;
 	}
 
 	if ($count < $files) {
