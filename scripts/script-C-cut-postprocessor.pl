@@ -121,7 +121,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$props{'Record.Cutoutseconds'} = "" . $outseconds if (defined($outseconds));
 	}
 
-	$props{'Processing.Duration.Intro'} = "" . (0 + $introduration) if (defined($introduration));
+	$props{'Processing.Intro.Duration'} = "" . (0 + $introduration) if (defined($introduration));
 	$props{'Processing.File.Intro'} = $intropath if (defined($intropath));
 	$props{'Processing.File.Outro'} = $outropath if (defined($outropath));
 
