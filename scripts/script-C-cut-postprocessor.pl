@@ -101,6 +101,20 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		}
 	}
 
+	# check language(s)
+	my $languages = '';
+	if (!defined($props->{'Record.Language'}) or $props->{'Record.Language'} eq '') {
+		$failreason = 'NO LANGUAGE SET!';
+		$fail = 1;
+	} else {
+		$languages = $props->{'Record.Language'};
+		# filter undefined tracks for new property Encoding.Language
+		$languages =~ s/und//g;
+		$languages =~ s/--+/-/g;
+		$languages =~ s/^-//;
+		$languages =~ s/-$//;
+	}
+
 	my %props = ( );
 
 	if ($cutmarksvalid > 0) {
@@ -124,14 +138,16 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$props{'Processing.Intro.Duration'} = "" . (0 + $introduration) if (defined($introduration));
 	$props{'Processing.File.Intro'} = $intropath if (defined($intropath));
 	$props{'Processing.File.Outro'} = $outropath if (defined($outropath));
-
-	$tracker->setTicketProperties($tid, \%props);
+	$props{'Encoding.Language'} = $languages if (defined($languages));
 
 	if ($fail > 0) {
 		print STDERR "failing ticket because: $failreason\n";
 		$tracker->setTicketFailed($tid, $failreason);
 		die ($failreason);
 	}
+
+	$tracker->setTicketProperties($tid, \%props);
+
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
 	# indicate short sleep to wrapper script
 	exit(100);
