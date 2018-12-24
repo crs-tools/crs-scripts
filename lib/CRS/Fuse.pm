@@ -201,4 +201,13 @@ sub getCutError {
 	return $self->{'cutError'};
 }
 
+sub getLog {
+	my $self = shift;
+	my $dir = $self->getMountPath();
+	if ( -e "$dir/log") {
+		return qx ( cat "$dir/log" );
+	}
+	return "";
+}
+
 1;

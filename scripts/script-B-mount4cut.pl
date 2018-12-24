@@ -132,6 +132,10 @@ sub prepareTicket {
 		print "FUSE mount created successfully.\n";
 		# restore cutmarks if available
 		$fuse->setCutmarks($in, $out) if (defined($in) or defined($out));
+		# add fuse log to ticket
+		my $log = $fuse->getLog();
+		print STDERR "$log\n";
+		$tracker->addLog($tid, $log) if ($log && $log ne '');
 		$tracker->setTicketDone($tid, "Mount4cut: FUSE mount created successfully.\n" . $cmd . "\n" . $error);
 		# indicate short sleep to wrapper script
 		exit(100);
