@@ -54,7 +54,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	$opts = "" unless defined ($opts);
 	print "$srcfile (in) -> $destfile (out) ...";
 	my $cmd = "scp -B -p $opts '$srcfile' '$destfile'";
-	my $return = system ($cmd);
+	my $out = qx( $cmd 2>&1 );
+	my $return = $?;
 	print " exit=$return\n";
 	
 	if ($return eq '0') {
@@ -62,6 +63,9 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		# indicate short sleep to wrapper script
 		exit(100);
 	} else {
-		$tracker->setTicketFailed($tid, "Encoding postprocessor: command '$cmd' failed!");
+		my $error = $out;
+		$error =~ s/.*(.{1,80})$/$1/m;
+		$error =~ s/[\r\n]//mg;
+		$tracker->setTicketFailed($tid, "Encoding postprocessor: command '$cmd' failed! Output ends with: '$error'");
 	}
 }
