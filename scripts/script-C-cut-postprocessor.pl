@@ -60,11 +60,12 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			$failreason = 'INTRO MISSING!';
 			$fail = 1;
 		} else {
-			my @ffprobe = qx ( ffprobe -i "$intropath" -print_format flat -show_format );
+			my @ffprobe = qx ( ffprobe -i "$intropath" -print_format flat -show_entries stream=duration -of default=noprint_wrappers=1:nokey=0 );
 			foreach (@ffprobe) {
-				if ( $_ =~ /^format.duration="(.+)"/ ) {
-					$introduration = $1;
-					last;
+				if ( $_ =~ /^duration=([0-9\.]+)/ ) {
+					# get the shortest stream duration, so encoding profile can fix different lengths
+					# of video and audio track to not introduce AV delay
+					$introduration = $1 unless ($introduration < $1 and $introduration > 0);
 				}
 			}
 		}
@@ -92,11 +93,11 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		($in, $out, $inseconds, $outseconds) = $fuse->getCutmarks($vid, $starttime);
 	} else {
 		$uncutpath = $fuse->getMountPath($vid) . '/uncut.ts';
-		my @ffprobe = qx ( ffprobe -i "$uncutpath" -print_format flat -show_format );
+		my @ffprobe = qx ( ffprobe -i "$uncutpath" -print_format flat -show_entries stream=duration -of default=noprint_wrappers=1:nokey=0 );
 		foreach (@ffprobe) {
-			if ( $_ =~ /^format.duration="(.+)"/ ) {
-				$outseconds = $1;
-				last;
+			if ( $_ =~ /^duration=([0-9\.]+)/ ) {
+				$outseconds = $1 unless defined ($outseconds);
+				$outseconds = $1 unless ($outseconds < $1);
 			}
 		}
 	}
