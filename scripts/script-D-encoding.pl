@@ -60,9 +60,21 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 
 	my $return = 0;
 	my $time = $start;
+	my $tasktype = 'encoding';
+
+	my $local_vaapi = $ENV{'CRS_USE_VAAPI'} // 'no';
+	my $project_vaapi = $props->{'Encoding.UseVaapi'} // 'yes';
+	if ($local_vaapi eq 'yes' && $project_vaapi eq 'yes') {
+		if ($ex->has_task_type('encoding-vaapi')) {
+			$tracker->addLog($tid, "encoding ticket with VAAPI support!\n");
+			$tasktype = 'encoding-vaapi';
+		} else {
+			$tracker->addLog($tid, "encoding ticket without VAAPI support because there is no vaapi task in encoding profile.\n");
+		}
+	}
 
 	eval {
-		$return = $ex->execute();
+		$return = $ex->execute($tasktype);
 	};
 
 	$time = time - $time;
