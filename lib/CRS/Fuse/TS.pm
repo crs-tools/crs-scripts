@@ -4,6 +4,7 @@ package CRS::Fuse::TS;
 use Math::Round;
 use strict;
 use parent qw(CRS::Fuse);
+use Encode qw(encode decode);
 
 sub new {
     my ($class, @args) = @_; 
@@ -91,9 +92,10 @@ sub doFuseMount {
 	return 0 unless defined($p);
 
 	# check existence of files
-	my @filenames = sort <'$capdir/$prefix-*.ts'>;
-	my $thresholdstring = $capdir.'/'.$prefix.'-'.$starttime;
-	print "checking files with pattern '$capdir/$prefix-*.ts' and comparing against '$thresholdstring' \n";
+	my $filter = encode('utf-8', "$capdir/$prefix-*.ts");
+	my @filenames = sort <'$filter'>;
+	my $thresholdstring = encode('utf-8', "$capdir/$prefix-$starttime");
+	print "checking files with pattern '$filter' and comparing against '$thresholdstring' \n";
 	my $iteration = 0;
 	my $count = 0;
 	foreach (@filenames) {
@@ -117,13 +119,15 @@ sub doFuseMount {
 	}
 
 	print "creating mount path \"$p\"\n" if defined($self->{debug});
-	my $log = join "\n", qx ( mkdir -p "$p" 2>&1 );
+	my $p2 = encode('utf-8', $p);
+	my $log = join "\n", qx ( mkdir -p "$p2" 2>&1 );
 	my $fusecmd = " ".$self->{binpath}."/fuse-ts p=\"$prefix-\" c=\"$capdir\" st=\"$starttime\" numfiles=$files totalframes=$frames ";
 	$fusecmd .= " fps=".$self->{fps} if (defined($self->{fps}) and $self->{fps} != 25);
 	$fusecmd .= " -oallow_other,use_ino \"$p\" ";
+	my $fusecmd2 = encode('utf-8', $fusecmd);
 
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
-	$log .= join "\n", qx ( $fusecmd 2>&1 );
+	$log .= join "\n", qx ( $fusecmd2 2>&1 );
 	return ($self->isVIDmounted($vid), $log, $fusecmd);
 }
 
