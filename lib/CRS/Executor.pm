@@ -330,6 +330,24 @@ sub run_cmd {
 	return 1;
 }
 
+sub has_task_type {
+	my $self = shift;
+	my $type = shift;
+
+	return 0 unless defined($type);
+
+	my @tasks = ( ) ;
+	foreach(@{$self->{job}->{tasks}}) {
+		foreach(@{$_->{task}}) {
+			if ($_->{type} eq $type) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 sub task_loop {
 	my $self = shift;
 
