@@ -147,8 +147,8 @@ sub doFuseRepairMount {
 	my $p = $self->getMountPath($vid);
 	return 0 unless defined($p);
 	my $log = qx ( mkdir -p \"$p\" );
-	$log .= join "\n", qx ( ln -s "$replacementpath" \"$p/uncut.ts\" 2>&1 );
-	return (1, $log, "ln -s \"$replacementpath\" \"$p/uncut.ts\" 2>&1");
+	$log .= join "\n", qx ( ln -sf "$replacementpath" \"$p/uncut.ts\" 2>&1 );
+	return (1, $log, "ln -sf \"$replacementpath\" \"$p/uncut.ts\" 2>&1");
 }
 
 sub getCutmarks {
