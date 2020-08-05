@@ -16,6 +16,7 @@ use POSIX;
 use DateTime;
 use strict;
 use CRS::Paths;
+use DateTime::Format::Strptime;
 
 sub new {
     my $class = shift;
@@ -41,7 +42,7 @@ sub new {
     return $self;
 }
 
-# start has syntax YYYY-MM-DD-hh:mm
+# start has syntax YYYY-MM-DDThh:mm:ssZ (ISO)
 # duration has syntax hh:mm
 # paddings are given in seconds
 # returns ($paddedstart, $paddedlength)
@@ -51,23 +52,12 @@ sub getPaddedTimes {
 	my ($start, $duration, $startpadding, $endpadding, undef) = @_;
 	print "getPaddedTimes ($start, $duration, $startpadding, $endpadding)\n" ;
 
-	my $startdatetime = undef;
-	if ($start =~ /(\d+)-(\d+)-(\d+)-(\d+)[\:-](\d+)/) {
-		$startdatetime = DateTime->new(
-			year      => $1,
-			month     => $2,
-			day       => $3,
-			hour      => $4,
-			minute    => $5,
-			second    => 0,
-			time_zone => 'Europe/Berlin',
-		);
-	} else {
-		print STDERR "start parameter has incorrect format!\n";
-		return undef;
-	}
+	my $dtformat = DateTime::Format::Strptime->new( pattern => '%FT%T%z');
+	my $startdatetime = $dtformat->parse_datetime($start);
+	my $local_tz = DateTime::TimeZone->new(name => 'local');
+	$startdatetime->set_time_zone($local_tz);
 	$startdatetime->add('seconds' => -$startpadding) if (defined($startpadding) and $startpadding =~ /^-?[0-9]+$/);
-	my $paddedstart = $startdatetime->ymd('.') . '-' . $startdatetime->hms('_');
+	my $paddedstart = $startdatetime->ymd('-') . '_' . $startdatetime->hms('-');
 
 	my $paddedlength = getPaddedDuration($duration, $startpadding, $endpadding);
 

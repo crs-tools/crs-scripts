@@ -71,8 +71,7 @@ sub prepareTicket {
 	# fetch metadata
 
 	my $room = $props->{'Fahrplan.Room'};
-	my $startdate = $props->{'Fahrplan.Date'};
-	my $starttime = $props->{'Fahrplan.Start'};
+	my $startdatetime = $props->{'Fahrplan.DateTime'};
 	my $duration = $props->{'Fahrplan.Duration'};
 	my $replacement = $props->{'Record.SourceReplacement'};
 
@@ -85,13 +84,12 @@ sub prepareTicket {
 
 	# check minimal metadata
 
-	if (!defined($room) || !defined($startdate) 
-		|| !defined($duration) || !defined($starttime)) {
+	if (!defined($room) || !defined($startdatetime) || !defined($duration)) {
 		print STDERR "NOT ENOUGH METADATA!\n";
 		$tracker->setTicketFailed($tid, 
 			"Not enough metadata!\n".
 			"Make sure that the ticket has following attributes:\n".
-			"-Fahrplan.Room\n-Fahrplan.Date\n-Fahrplan.Duration\n-Fahrplan.Start");
+			"-Fahrplan.Room\n-Fahrplan.DateTime\n-Fahrplan.Duration");
 		die("NOT ENOUGH METADATA!\n");
 	}
 	my $startpadding = $props->{'Record.StartPadding'};
@@ -99,10 +97,9 @@ sub prepareTicket {
 
 	# transformation of metadata
 
-	my $start = $startdate . '-' . $starttime; # put date and time together
 	$endpadding = 15 * 60 if (!defined($endpadding)); # default padding is 15 min.
 	$startpadding = 15 * 60 unless defined($startpadding); # default startpadding is 15 min.
-	my ($paddedstart, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
+	my ($paddedstart, $paddedlength) = CRS::Fuse::getPaddedTimes($startdatetime, $duration, $startpadding, $endpadding);
 
 	# now try to create the mount
 
