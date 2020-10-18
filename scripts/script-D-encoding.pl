@@ -92,7 +92,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		print STDERR "$log\n";
 		$tracker->addLog($tid, $log) if ($log && $log ne '');
 		# do not try to set failed if we aborted because of tracker issues:
-		$tracker->setTicketFailed($tid, "Encoding tasks failed!") unless $abortion;
+		$tracker->setTicketFailed($tid, "Encoding tasks failed! Errors:\n" . $log) unless $abortion;
 	}
 }
 
