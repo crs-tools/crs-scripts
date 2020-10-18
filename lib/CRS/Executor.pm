@@ -440,6 +440,7 @@ sub printParsedCommands {
 	}
 
 	my $num_tasks = scalar @tasks;
+	my $return = '';
 	TASK: for (my $task_id = 0; $task_id < $num_tasks; ++$task_id) {
 
 		# check for error elements
@@ -451,9 +452,12 @@ sub printParsedCommands {
 		}
 		# parse XML and print cmd
 		my $cmd = $self->parse_cmd($tasks[$task_id]->{option});
-		$self->print ("task " . ($task_id + 1) . " (type ". $tasks[$task_id]->{type} .") of $num_tasks has command:\n\n$cmd\n\n");
+		my $cmdinfo = "task " . ($task_id + 1) . " (type ". $tasks[$task_id]->{type} .") of $num_tasks has command:\n\n$cmd\n\n";
+		$self->print ($cmdinfo);
+		$return .= "$cmdinfo\n\n";
 	}
 	$self->{bogusmode} = 0;
+	return $return;
 }
 
 sub getOutput {
