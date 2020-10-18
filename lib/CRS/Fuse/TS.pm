@@ -1,7 +1,8 @@
 
 package CRS::Fuse::TS;
 
-use Math::Round;
+use Math::Round qw(nearest_floor);
+use CRS::Media;
 use strict;
 use parent qw(CRS::Fuse);
 use Encode qw(encode decode);
@@ -24,15 +25,15 @@ sub getSourceFileLengthInSeconds {
 	foreach (@files) {
 		my $file = $_;
 		chop $file;
-		# Duration: 00:00:35.99
-		my $size = qx ( ffprobe "$file" | grep Duration: );
-		if ($size =~ /Duration:\ ([0-9]{2})\:([0-9]{2})\:([0-9]{2})\.([0-9]{2})/) {
-			$size = $1 * 3600 + $2 * 60 + $3;
-			$size++ if ($4 > 50);
-			$filesecs += $size;
-			$files++;
+		my $duration = CRS::Media::getDuration($file, -1);
+		if ($duration < 0) {
+			print STDERR "cannot get duration of '$file'!\n";
+			return;
 		}
+		$filesecs += $duration;
+		$files++;
 	}
+	$filesecs = nearest_floor(1, $filesecs);
 	return ($files,$filesecs);
 }
 
