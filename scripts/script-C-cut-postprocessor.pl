@@ -104,7 +104,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$languages =~ s/-$//;
 	}
 
-	my %props = ( );
+	my %newprops = ( );
 
 	if ($cutmarksvalid > 0) {
 		# Until here, the time based cutmarks are strings. Now we need to
@@ -117,17 +117,17 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		$outseconds = 0 + $outseconds;
 		my $diffseconds = 0;
 		$diffseconds = 0 + $outseconds - $inseconds if (defined($outseconds) && defined($inseconds));
-		$props{'Record.Cutin'} = "" . $in;
-		$props{'Record.Cutinseconds'} = "" . $inseconds;
-		$props{'Record.Cutdiffseconds'} = "" . $diffseconds;
-		$props{'Record.Cutout'} = $out if (defined($out));
-		$props{'Record.Cutoutseconds'} = "" . $outseconds if (defined($outseconds));
+		$newprops{'Record.Cutin'} = "" . $in;
+		$newprops{'Record.Cutinseconds'} = "" . $inseconds;
+		$newprops{'Record.Cutdiffseconds'} = "" . $diffseconds;
+		$newprops{'Record.Cutout'} = $out if (defined($out));
+		$newprops{'Record.Cutoutseconds'} = "" . $outseconds if (defined($outseconds));
 	}
 
-	$props{'Processing.Intro.Duration'} = "" . (0 + $introduration) if (defined($introduration));
-	$props{'Processing.File.Intro'} = $intropath if (defined($intropath));
-	$props{'Processing.File.Outro'} = $outropath if (defined($outropath));
-	$props{'Encoding.Language'} = $languages if (defined($languages));
+	$newprops{'Processing.Intro.Duration'} = "" . (0 + $introduration) if (defined($introduration));
+	$newprops{'Processing.File.Intro'} = $intropath if (defined($intropath) && $intropath ne $props{'Processing.File.Intro'});
+	$newprops{'Processing.File.Outro'} = $outropath if (defined($outropath) && $outropath ne $props{'Processing.File.Outro'});
+	$newprops{'Encoding.Language'} = $languages if (defined($languages));
 
 	if ($fail > 0) {
 		print STDERR "failing ticket because: $failreason\n";
@@ -135,7 +135,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		die ($failreason);
 	}
 
-	$tracker->setTicketProperties($tid, \%props);
+	$tracker->setTicketProperties($tid, \%newprops);
 
 	$tracker->setTicketDone($tid, 'Cut postprocessor: cut completed, metadata written.');
 	# indicate short sleep to wrapper script
