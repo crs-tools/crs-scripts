@@ -27,29 +27,31 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		|| (defined($props->{'Fahrplan.VideoDownloadURL'} && $props->{'Fahrplan.VideoDownloadURL'} ne '')));
 	my $container = $props->{'Record.Container'};
 	$container = 'TS' unless defined($container);
+	$preferredIntroSuffix = lc($container);
 
 	my $fuse;
-	my $intropath;
-	my $outropath;
+	if (defined($container) and $container eq 'DV') {
+		$fuse = CRS::Fuse::VDV->new($props);
+	} else {
+		$fuse = CRS::Fuse::TS->new($props);
+	}
+
+	my $intropath = my $orig_intropath = $props->{'Processing.File.Intro'};
+	$intropath //= $fuse->getIntro($preferredIntroSuffix, $vid);
+	$orig_intropath //= '';
+	my $outropath = my $orig_outropath = $props->{'Processing.File.Outro'};
+	$outropath //= $fuse->getOutro($preferredIntroSuffix, $vid);
+	$orig_outropath //= '';
+
 	my $introduration = 0;
 	my $fail = 0;
 	my $cutmarksvalid = 0;
 	my $failreason = '';
 
-	if (defined($container) and $container eq 'DV') {
-		$fuse = CRS::Fuse::VDV->new($props);
-		$intropath = $fuse->getIntro('dv', $vid);
-		$outropath = $fuse->getOutro('dv', $vid);
-	} else {
-		$fuse = CRS::Fuse::TS->new($props);
-		$intropath = $fuse->getIntro('ts', $vid);
-		$outropath = $fuse->getOutro('ts', $vid);
-	}
-
 	my $ret = $fuse->checkCut($vid) + $isRepaired;
 	if ($ret == 0) {
 		print STDERR "cutting event # $vid / ticket # $tid incomplete!\n";
-		$failreason = 'CUTTING INCOMPLETE! ' . $fuse->getCutError();
+		$failreason = 'CUTTING INCOMPLETE! ' . $fuse->getCutError(). ' ';
 		$fail = 1;
 	} else {
 		$cutmarksvalid = 1;
@@ -57,25 +59,40 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	# check intro, gather duration
 	my $introconfigpath = $paths->getPath('Intros');
 	if (defined($introconfigpath) && length $introconfigpath > 0) {
-		if (!defined($intropath)) {
-			$failreason = 'INTRO MISSING!';
+		if (!defined($intropath) || !-f $intropath) {
+			$failreason .= 'INTRO MISSING!';
 			$fail = 1;
 		} else {
 			$introduration = CRS::Media::getDuration($intropath, 0);
 		}
 	} else {
+		# it might be that an Intro was defined globally via property without the search path scheme
+		if (defined($intropath) && length $intropath > 0 && -f $intropath) {
+			$introduration = CRS::Media::getDuration($intropath, 0);
+		}
+	}
+	if ($introduration == 0) {
 		undef $intropath;
+		undef $introduration;
 	}
 
 	# check outro
 	my $outroconfigpath = $paths->getPath('Outro');
 	if (defined($outroconfigpath) && length $outroconfigpath > 0) {
-		if (!defined($outropath)) {
+		if (!defined($outropath) || !-f $outropath) {
 			$failreason = 'OUTRO MISSING!';
 			$fail = 1;
 		}
 	} else {
-		undef $outropath;
+		# it might be that an Outro was defined globally via property without the search path scheme
+		if (defined($outropath) && length $outropath > 0) {
+			if (! -f $outropath) {
+				$failreason = 'OUTRO MISSING!';
+				$fail = 1;
+			}
+		} else {
+			undef $outropath;
+		}
 	}
 
 	my ($in, $out, $inseconds, $outseconds) = (0, undef, 0, undef);
@@ -125,8 +142,8 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	}
 
 	$newprops{'Processing.Intro.Duration'} = "" . (0 + $introduration) if (defined($introduration));
-	$newprops{'Processing.File.Intro'} = $intropath if (defined($intropath) && $intropath ne $props{'Processing.File.Intro'});
-	$newprops{'Processing.File.Outro'} = $outropath if (defined($outropath) && $outropath ne $props{'Processing.File.Outro'});
+	$newprops{'Processing.File.Intro'} = $intropath if (defined($intropath) && $intropath ne $orig_intropath);
+	$newprops{'Processing.File.Outro'} = $outropath if (defined($outropath) && $outropath ne $orig_outropath);
 	$newprops{'Encoding.Language'} = $languages if (defined($languages));
 
 	if ($fail > 0) {
