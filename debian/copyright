@@ -4,7 +4,7 @@ Upstream-Contact: atze@fem.tu-ilmenau.de
 Source: https://github.com/crs-tools/crs-scripts
 
 Files: *
-Copyright: 2015 Matthias Hunstock
+Copyright: 2012-2020 Matthias Hunstock, pegro
 License: Apache-2.0
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.

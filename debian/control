@@ -23,9 +23,7 @@ Depends: ${misc:Depends},
          libboolean-perl,
          libwww-curl-perl,
          libjson-perl,
-         fuse-ts,
-         fuse,
-         cifs-utils,
-         ntfs-3g
+         fuse-ts
+Recommends: ca-certificates
 Description: CRS Worker scripts
  Set of worker scripts that communicate with the https://github.com/crs-tools/tracker
