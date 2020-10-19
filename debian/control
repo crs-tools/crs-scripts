@@ -12,20 +12,20 @@ Package: crs-scripts
 Architecture: any
 Depends: ${misc:Depends}, 
          ${shlibs:Depends},
-         libconfig-inifiles-perl
-         libfile-which-perl
-         libipc-run3-perl
-         libproc-processtable-perl
-         libxml-rpc-fast-perl
-         libxml-simple-perl
-         libmath-round-perl
-         libdatetime-perl
-         libboolean-perl
-         libwww-curl-perl
-         libjson-perl
-         fuse-ts
-         fuse
-         cifs-utils
+         libconfig-inifiles-perl,
+         libfile-which-perl,
+         libipc-run3-perl,
+         libproc-processtable-perl,
+         libxml-rpc-fast-perl,
+         libxml-simple-perl,
+         libmath-round-perl,
+         libdatetime-perl,
+         libboolean-perl,
+         libwww-curl-perl,
+         libjson-perl,
+         fuse-ts,
+         fuse,
+         cifs-utils,
          ntfs-3g
 Description: CRS Worker scripts
  Set of worker scripts that communicate with the https://github.com/crs-tools/tracker
