@@ -20,9 +20,9 @@ sub getDuration {
 	
 	my $duration = $default;
 
-	my @ffprobe = qx ( ffprobe -i "$fullpath" -hide_banner -print_format flat -show_entries stream=duration -of default=noprint_wrappers=1:nokey=0 2>/dev/null );
+	my @ffprobe = qx ( ffprobe -i "$fullpath" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 2>/dev/null );
 	foreach (@ffprobe) {
-		if ( $_ =~ /^duration=([0-9\.]+)/ ) {
+		if ( $_ =~ /^([0-9\.]+)/ ) {
 			# get the shortest stream duration
 			$duration = $1 unless ($duration < $1 and $duration > 0);
 		}
