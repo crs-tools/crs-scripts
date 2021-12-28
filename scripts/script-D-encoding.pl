@@ -39,7 +39,14 @@ if (check_voctomix()) {
 	exit(0);
 }
 
-my $ticket = $tracker->assignNextUnassignedForState('encoding', 'encoding');
+my $ticket;
+if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
+	my $filter = {};
+	$filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+	$ticket = $tracker->assignNextUnassignedForState('encoding', 'encoding', $filter);
+} else {
+	$ticket = $tracker->assignNextUnassignedForState('encoding', 'encoding');
+}
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for encoding\n";

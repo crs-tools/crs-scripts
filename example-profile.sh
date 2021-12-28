@@ -8,6 +8,9 @@ export CRS_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # change to yes to use VAAPI encoding profiles on this host
 export CRS_USE_VAAPI=no
 
+# if you need to filter by room
+#export CRS_ROOM=Saal1
+
 # a place to store voc_ca.pem
 # needs to be a hashed dir (man c_rehash)
 #export HTTPS_CA_DIR=/opt/crs/software/tools/tracker3.0/ssl/

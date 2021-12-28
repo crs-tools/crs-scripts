@@ -9,7 +9,15 @@ use boolean;
 use bignum;
 
 my $tracker = CRS::Tracker::Client->new();
-my $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
+
+my $ticket;
+if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
+        my $filter = {};
+        $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing', $filter);
+} else {
+        $ticket = $tracker->assignNextUnassignedForState('recording', 'finalizing');
+}
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for finalizing\n";

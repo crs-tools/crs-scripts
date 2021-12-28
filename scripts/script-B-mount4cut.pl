@@ -17,7 +17,14 @@ if (!defined($token)) {
 
 my $tracker = CRS::Tracker::Client->new();
 
-my $ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
+my $ticket;
+if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
+	my $filter = {};
+	$filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+	$ticket = $tracker->assignNextUnassignedForState('recording', 'preparing', $filter);
+} else {
+	$ticket = $tracker->assignNextUnassignedForState('recording', 'preparing');
+}
 
 if (defined($ticket) && ref($ticket) ne 'boolean' && $ticket->{id} > 0) {
 	prepareTicket($ticket);

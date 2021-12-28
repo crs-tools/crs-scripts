@@ -5,7 +5,14 @@ use CRS::Executor;
 use boolean;
 
 my $tracker = CRS::Tracker::Client->new();
-my $ticket = $tracker->assignNextUnassignedForState('encoding', 'postencoding');
+my $ticket;
+if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
+        my $filter = {};
+        $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
+        $ticket = $tracker->assignNextUnassignedForState('encoding', 'postencoding', $filter);
+} else {
+        $ticket = $tracker->assignNextUnassignedForState('encoding', 'postencoding');
+}
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print "currently no tickets for postencoding\n";
