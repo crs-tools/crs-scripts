@@ -1,0 +1,19 @@
+# don't display the copyright page
+startup_message off
+
+# increase scrollback buffer size
+defscrollback 10000
+
+# title of the session
+sessionname tracker-scripts
+
+hardstatus alwayslastline
+hardstatus string '%{= kG}%-Lw%{= kW}%50> %n%f* %t%{= kG}%+Lw%< %{= kG}'
+
+# enable utf8 output to stdout for python
+setenv LC_ALL en_US.UTF-8
+
+screen -t A-recording+relive-scheduler      bash -c ' ./bin/crs_run script-A-recording+relive-scheduler.pl'
+
+screen -t X-help                     bash -c 'echo -e "\nThis screen has multiple tabs opened, which each run one of the scripts for the various stages of a tracker-ticket. Use <Ctrl+a> <number> to switch to one of these tabs. The tabs run the following scripts:\n Tab 0: A-recording-scheduler\n Tab 1: B-mount4cut\n Tab 2: C-cut-postprocessor\n Tab 3: D-encoding\n Tab 4: E-postencoding (auphonic)\n Tab 5: F-postprocessing(upload)\n Tab 6: this help\n\nQuit everything with <Ctrl+a> :quit <Return>\n"; cat '
+
