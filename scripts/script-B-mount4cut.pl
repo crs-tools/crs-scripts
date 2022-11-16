@@ -130,7 +130,7 @@ sub prepareTicket {
 	my %props2 = ();
 	$props2{'Record.Room'} = $room if (defined($room));
 	$props2{'Record.DurationSeconds'} = $paddedlength;
-	$props2{'Record.DurationFrames'} = $paddedlength * 25;
+	$props2{'Record.DurationFrames'} = $paddedlength * $fuse->{'fps'};
 	$props2{'Record.EndPadding'} = $endpadding;
 	$props2{'Record.MountCmd'} = $cmd;
 
