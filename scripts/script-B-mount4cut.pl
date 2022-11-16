@@ -119,8 +119,8 @@ sub prepareTicket {
 		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $replacement);
 	} else {
 		if (defined($room)) {
-			$room =~ s/\ +//g;
 			$room = lc($room);
+			$room =~ s/[^a-z0-9-_]+/_/g;
 		}
 		($r, $error, $cmd) = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
