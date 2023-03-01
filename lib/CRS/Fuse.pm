@@ -109,12 +109,19 @@ sub getFuseMounts {
 }
 
 sub getMountPath {
-	my ($self, $vid) = @_;
+	my ($self, $vid, $room) = @_;
 	return unless defined($vid);
 	my $base = $self->{'paths'}->getPath('Raw');
 	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $base;
-	if (defined($self->{'Project.Slug'}) && defined($self->{'Fahrplan.Room'})) {
-		return $base . '/' . $self->{'Project.Slug'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
+	if (!defined($room)) {
+		if (defined($self->{'Record.Room'})) {
+			my $room = $self->{'Record.Room'};
+		} elsif (defined($self->{'Fahrplan.Room'})) {
+			my $room = $self->{'Fahrplan.Room'};
+		}
+	}
+	if (defined($self->{'Project.Slug'}) && defined($room)) {
+		return $base . '/' . $self->{'Project.Slug'} . '/' . $room . "/$vid";
 	}
 	return "$base/$vid";
 }

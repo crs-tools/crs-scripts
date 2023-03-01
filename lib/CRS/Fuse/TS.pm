@@ -89,7 +89,9 @@ sub doFuseMount {
 
 
 	my $capdir = $self->getCapturePath($room);
-	my $p = $self->getMountPath($vid);
+	# we have to set $room manually here, because Record.Room is possibly
+	# not known at this point.
+	my $p = $self->getMountPath($vid, $room);
 	return 0 unless defined($p);
 
 	# check existence of files
