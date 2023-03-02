@@ -158,9 +158,9 @@ sub isVIDmounted {
 }
 
 sub doFuseUnmount {
-	my ($self, $vid) = @_;
+	my ($self, $vid, $room) = @_;
 	return unless defined ($vid);
-	my $p = $self->getMountPath($vid);
+	my $p = $self->getMountPath($vid, $room);
 	qx ( fusermount -u "$p" -z );
 }
 

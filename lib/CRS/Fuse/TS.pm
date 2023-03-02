@@ -74,7 +74,7 @@ sub doFuseMount {
 		$starttime = "$1-$2-$3_$4-$5-$6";
 	}
 
-	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
+	$self->doFuseUnmount($vid, $room) if $self->isVIDmounted($vid, $room);
 	my $files;
 	if (defined($length)) {
 		$files = int($length * $self->{fps} / $self->{defaultpieceframes}) + 1;
