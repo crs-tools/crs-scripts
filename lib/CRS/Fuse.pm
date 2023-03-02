@@ -140,12 +140,12 @@ sub getCapturePath {
 }
 
 sub isVIDmounted {
-	my ($self, $vid) = @_;
+	my ($self, $vid, $room) = @_;
 	return 0 unless defined($vid);
 	my @t = $self->getFuseMounts();
 	foreach(@t) {
 		if ($_ eq $vid) {
-			my $pidfile = $self->getMountPath($vid).'/pid';
+			my $pidfile = $self->getMountPath($vid, $room).'/pid';
 			if (-f$pidfile) {
 				return 1;
 			} else {

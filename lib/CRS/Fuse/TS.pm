@@ -131,7 +131,7 @@ sub doFuseMount {
 
 	print "FUSE cmd: $fusecmd\n" if defined($self->{debug});
 	$log .= join "\n", qx ( $fusecmd2 2>&1 );
-	return ($self->isVIDmounted($vid), $log, $fusecmd);
+	return ($self->isVIDmounted($vid, $room), $log, $fusecmd);
 }
 
 sub doFuseRepairMount {
