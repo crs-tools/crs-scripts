@@ -135,7 +135,7 @@ sub doFuseMount {
 }
 
 sub doFuseRepairMount {
-	my ($self, $vid, $replacement, undef) = @_;
+	my ($self, $vid, $room, $replacement, undef) = @_;
 
 	print "doFuseRepairMount: $vid '$replacement'\n" if defined($self->{debug});
 	return 0 unless defined($replacement);
@@ -146,8 +146,8 @@ sub doFuseRepairMount {
 	my $replacementpath = "$repairdir/$replacement";
 	return 0 unless -r $replacementpath;
 	print "replacing FUSE with repaired file $replacementpath*\n" if defined($self->{debug});
-	$self->doFuseUnmount($vid) if $self->isVIDmounted($vid);
-	my $p = $self->getMountPath($vid);
+	$self->doFuseUnmount($vid, $room) if $self->isVIDmounted($vid, $room);
+	my $p = $self->getMountPath($vid, $room);
 	return 0 unless defined($p);
 	my $log = qx ( mkdir -p \"$p\" );
 	$log .= join "\n", qx ( ln -sf "$replacementpath" \"$p/uncut.ts\" 2>&1 );
