@@ -113,13 +113,10 @@ sub getMountPath {
 	return unless defined($vid);
 	my $base = $self->{'paths'}->getPath('Raw');
 	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $base;
-	if (!defined($room)) {
-		if (defined($self->{'Record.Room'})) {
-			my $room = $self->{'Record.Room'};
-		} elsif (defined($self->{'Fahrplan.Room'})) {
-			my $room = $self->{'Fahrplan.Room'};
-		}
-	}
+	$room = $room
+		// $self->{'Record.Room'}
+		// $self->{'Fahrplan.Room'};
+
 	if (defined($self->{'Project.Slug'}) && defined($room)) {
 		return $base . '/' . $self->{'Project.Slug'} . '/' . $room . "/$vid";
 	}
