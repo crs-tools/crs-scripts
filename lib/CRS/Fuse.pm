@@ -115,9 +115,9 @@ sub getMountPath {
 	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $base;
 	if (!defined($room)) {
 		if (defined($self->{'Record.Room'})) {
-			my $room = $self->{'Record.Room'};
+			$room = $self->{'Record.Room'};
 		} elsif (defined($self->{'Fahrplan.Room'})) {
-			my $room = $self->{'Fahrplan.Room'};
+			$room = $self->{'Fahrplan.Room'};
 		}
 	}
 	if (defined($self->{'Project.Slug'}) && defined($room)) {
