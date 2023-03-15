@@ -120,7 +120,7 @@ sub prepareTicket {
 	my ($r, $error, $cmd);
 	if ($isRepaired) {
 		print "Creating repair mount with source '$replacement'\n";
-		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $replacement);
+		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $room, $replacement);
 	} else {
 		($r, $error, $cmd) = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
