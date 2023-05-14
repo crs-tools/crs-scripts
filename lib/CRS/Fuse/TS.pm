@@ -144,7 +144,12 @@ sub doFuseRepairMount {
 	die "ERROR: no Processing.Path.Repair specified!\n" unless defined $repairdir;
 
 	my $replacementpath = "$repairdir/$replacement";
-	return 0 unless -r $replacementpath;
+
+	unless (-r $replacementpath) {
+		print "ERROR: Replacement Path '$replacementpath' is not readable!\n";
+		return 0;
+	}
+
 	print "replacing FUSE with repaired file $replacementpath*\n" if defined($self->{debug});
 	$self->doFuseUnmount($vid, $room) if $self->isVIDmounted($vid, $room);
 	my $p = $self->getMountPath($vid, $room);
