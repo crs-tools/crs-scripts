@@ -21,10 +21,9 @@ Environment=CRS_TOKEN=bar
 Environment=CRS_TRACKER=https://example.com/rpc
 # If you want, you can also override HTTPS_CA_DIR and SLEEP_TIME here
 
-# Restart always, except if the script exits cleanly (which should never
-# happen) or exits with code 250 (which means the worker requested
-# termination)
-Restart=on-failure
+# Restart always, except if the script exits with code 250 (which means
+# the worker requested termination)
+Restart=always
 RestartSec=10
 RestartPreventExitStatus=250
 
