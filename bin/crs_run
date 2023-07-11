@@ -1,7 +1,10 @@
 #!/bin/bash
 
+[[ -n "$DEBUG" ]] && set -x
+
 SCRIPT_NAME=`basename "$1"`
-if [ -z "${SCRIPT_NAME}" ]; then 
+if [ -z "${SCRIPT_NAME}" ]
+then
     echo "no script given."
     echo "usage: `basename $0` <script> [<script params>]"
     exit 1
@@ -9,7 +12,9 @@ fi
 
 shift # dont give scriptname as param to script
 
+# these defaults may get overridden
 SLEEP_TIME=${SLEEP_TIME:-30}
+export HTTPS_CA_DIR=${HTTPS_CA_DIR:-/etc/ssl/certs}
 
 # short sleep time after work has done
 SLEEP_TIME_SHORT=2
@@ -25,78 +30,56 @@ else
 fi
 SCRIPT_PATH=$(dirname ${SCRIPT_PATH})
 
-# set perl include path
 export PERL5LIB=${SCRIPT_PATH}/lib
 
 # assemble script command
 SCRIPT=${SCRIPT_PATH}/scripts/${SCRIPT_NAME}
+
+if [ -z "${CRS_SECRET}" ] || [ -z "${CRS_TOKEN}" ] || [ -z "${CRS_TRACKER}" ]
+then
+    echo "Required environment variables CRS_SECRET, CRS_TOKEN and/or CRS_TRACKER missing!" >&2
+    exit 250
+fi
+
+if ! [ -f "${SCRIPT}" ]
+then
+    echo "selected script (${SCRIPT}) does not exist" >&2
+    exit 250
+fi
+
+if ! [ -x "${SCRIPT}" ]; then
+    echo "selected script (${SCRIPT}) is not executable" >&2
+    exit 250
+fi
 
 echo "-------------------------------------------"
 echo "       CRS Runner v1.0 by FeM 2016"
 echo "-------------------------------------------"
 echo "    Script:  ${SCRIPT_NAME}"
 echo "Sleep time:  ${SLEEP_TIME}s"
-echo "Started on:  $(date +%c)"
 echo "-------------------------------------------"
 
-CONFIGFILE=/etc/default/crs-worker
-LOCALFILE="${LOCALFILE:-${SCRIPT_PATH}/tracker-profile.sh}"
-
 ##### BEGIN WHILE LOOP #####
-while true; do
-
-
-    if [ -r "${CONFIGFILE}" ] ; then
-        echo "Reading config from ${CONFIGFILE}"
-        . "${CONFIGFILE}"
-    fi
-    if [ -r "${LOCALFILE}" ] ; then
-        echo "Reading config from ${LOCALFILE}"
-        . "${LOCALFILE}"
-    fi
-
-    export CRS_SECRET=${CRS_SECRET:-$DEFAULT_CRS_SECRET}
-    export CRS_TOKEN=${CRS_TOKEN:-$DEFAULT_CRS_TOKEN}
-    export CRS_TRACKER=${CRS_TRACKER:-$DEFAULT_CRS_TRACKER}
-    export HTTPS_CA_DIR=${HTTPS_CA_DIR:-/etc/ssl/certs}
-
-    if [ -z "${CRS_SECRET}" -o -z "${CRS_TOKEN}" -o -z "${CRS_TRACKER}" ]; then
-        echo "CRS_SECRET, CRS_TOKEN and/or CRS_TRACKER not set.";
-        sleep ${SLEEP_TIME_LONG}
-        continue
-    fi
-
-    if [ ! -f "${SCRIPT}" ]; then
-        echo "selected script (${SCRIPT}) does not exist";
-        sleep ${SLEEP_TIME_LONG}
-        continue
-    fi
-
-    if [ ! -x "${SCRIPT}" ]; then
-        echo "selected script (${SCRIPT}) is not executable";
-        sleep ${SLEEP_TIME_LONG}
-        continue
-    fi
-
-    echo "------- executing ($(date +%X)), talking to tracker instance ${CRS_TRACKER} ---------"
+while true
+do
+    echo "------- executing ${SCRIPT} - talking to tracker instance ${CRS_TRACKER} -------"
     "${SCRIPT}" $@
     EC=$?
-    if [ $EC -eq 250 ]; then
-        echo "---- got termination signal, exiting ----"
-        sleep 30
-        break;
-    fi
-    if [ $EC -eq 100 ]; then
-        echo "------- waiting (short) ${SLEEP_TIME_SHORT}s ($(date +%X)) ---------"
+    if [ $EC -eq 250 ]
+    then
+        echo "------- got termination signal, exiting -------"
+        exit 250
+    elif [ $EC -eq 100 ]
+    then
+        echo "------- waiting (short) ${SLEEP_TIME_SHORT}s -------"
         sleep ${SLEEP_TIME_SHORT}
-    else if [ $EC -eq 200 ]; then
-            echo "------- waiting (long) ${SLEEP_TIME_LONG}s ($(date +%X)) ---------"
-            sleep ${SLEEP_TIME_LONG}
-        else
-            echo "------- waiting ${SLEEP_TIME}s ($(date +%X)) ---------"
-            sleep ${SLEEP_TIME}
-        fi
+    elif [ $EC -eq 200 ]
+    then
+        echo "------- waiting (long) ${SLEEP_TIME_LONG}s  -------"
+        sleep ${SLEEP_TIME_LONG}
+    else
+        echo "------- waiting ${SLEEP_TIME}s -------"
+        sleep ${SLEEP_TIME}
     fi
-
 done
 ##### END WHILE LOOP #####

@@ -3,13 +3,30 @@ Description=CRS runner for script-A-recording-scheduler.pl
 After=network.target
 
 [Service]
+# The user and group the script should be running as
 User=voc
 Group=voc
+
+# Make sure to adjust the path to the git repository here
 ExecStart=/opt/crs-scripts/bin/crs_run script-A-recording-scheduler.pl
 WorkingDirectory=/opt/crs-scripts
+
+# Set this to the unit name, otherwise everything will get logged as
+# "crs_run" in journalctl
+SyslogIdentifier=crs-recording-scheduler
+
+# Provide your tracker login details here
+Environment=CRS_SECRET=foo
+Environment=CRS_TOKEN=bar
+Environment=CRS_TRACKER=https://example.com/rpc
+# If you want, you can also override HTTPS_CA_DIR and SLEEP_TIME here
+
+# Restart always, except if the script exits cleanly (which should never
+# happen) or exits with code 250 (which means the worker requested
+# termination)
 Restart=on-failure
 RestartSec=10
-SyslogIdentifier=crs-recording-scheduler
+RestartPreventExitStatus=250
 
 [Install]
 WantedBy=multi-user.target
