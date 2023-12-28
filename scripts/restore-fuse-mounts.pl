@@ -63,7 +63,7 @@ foreach (@$tickets) {
 	my $fuse = CRS::Fuse->new($props) or die 'Fuse lib is missing';
 	my $mntpath = $fuse->getMountPath($vid) or die 'Cannot get mount path';
 	print " creating directory '$mntpath' \n";
-	qx / mkdir -p "$mntpath" / or die 'Cannot create mount directory';
+	qx / mkdir -p "$mntpath" /;
 	
 	print "  executing '$cmd'\n";
 	qx / $cmd /;
