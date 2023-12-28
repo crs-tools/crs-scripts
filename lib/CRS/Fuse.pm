@@ -109,12 +109,16 @@ sub getFuseMounts {
 }
 
 sub getMountPath {
-	my ($self, $vid) = @_;
+	my ($self, $vid, $room) = @_;
 	return unless defined($vid);
 	my $base = $self->{'paths'}->getPath('Raw');
 	die "ERROR: Processing.Path.Raw is not defined!\n" unless defined $base;
-	if (defined($self->{'Project.Slug'}) && defined($self->{'Fahrplan.Room'})) {
-		return $base . '/' . $self->{'Project.Slug'} . '/' . $self->{'Fahrplan.Room'} . "/$vid";
+	$room = $room
+		// $self->{'Record.Room'}
+		// $self->{'Fahrplan.Room'};
+
+	if (defined($self->{'Project.Slug'}) && defined($room)) {
+		return $base . '/' . $self->{'Project.Slug'} . '/' . $room . "/$vid";
 	}
 	return "$base/$vid";
 }
@@ -133,12 +137,12 @@ sub getCapturePath {
 }
 
 sub isVIDmounted {
-	my ($self, $vid) = @_;
+	my ($self, $vid, $room) = @_;
 	return 0 unless defined($vid);
 	my @t = $self->getFuseMounts();
 	foreach(@t) {
 		if ($_ eq $vid) {
-			my $pidfile = $self->getMountPath($vid).'/pid';
+			my $pidfile = $self->getMountPath($vid, $room).'/pid';
 			if (-f$pidfile) {
 				return 1;
 			} else {
@@ -151,9 +155,9 @@ sub isVIDmounted {
 }
 
 sub doFuseUnmount {
-	my ($self, $vid) = @_;
+	my ($self, $vid, $room) = @_;
 	return unless defined ($vid);
-	my $p = $self->getMountPath($vid);
+	my $p = $self->getMountPath($vid, $room);
 	qx ( fusermount -u "$p" -z );
 }
 

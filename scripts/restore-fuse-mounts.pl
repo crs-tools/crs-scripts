@@ -1,6 +1,8 @@
 #!/usr/bin/perl -W
 
 use strict;
+use CRS::Fuse::VDV;
+use CRS::Fuse::TS;
 use CRS::Tracker::Client;
 use boolean;
 

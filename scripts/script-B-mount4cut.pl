@@ -111,17 +111,17 @@ sub prepareTicket {
 	$startpadding = 15 * 60 unless defined($startpadding); # default startpadding is 15 min.
 	my ($paddedstart, $paddedlength) = CRS::Fuse::getPaddedTimes($start, $duration, $startpadding, $endpadding);
 
-	# now try to create the mount
+	if (defined($room)) {
+		$room = lc($room);
+		$room =~ s/[^a-z0-9-_]+/_/g;
+	}
 
+	# now try to create the mount
 	my ($r, $error, $cmd);
 	if ($isRepaired) {
 		print "Creating repair mount with source '$replacement'\n";
-		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $replacement);
+		($r, $error, $cmd) = $fuse->doFuseRepairMount($vid, $room, $replacement);
 	} else {
-		if (defined($room)) {
-			$room =~ s/\ +//g;
-			$room = lc($room);
-		}
 		($r, $error, $cmd) = $fuse->doFuseMount($vid, $room, $paddedstart, $paddedlength);
 	}
 
@@ -130,7 +130,7 @@ sub prepareTicket {
 	my %props2 = ();
 	$props2{'Record.Room'} = $room if (defined($room));
 	$props2{'Record.DurationSeconds'} = $paddedlength;
-	$props2{'Record.DurationFrames'} = $paddedlength * 25;
+	$props2{'Record.DurationFrames'} = $paddedlength * $fuse->{'fps'};
 	$props2{'Record.EndPadding'} = $endpadding;
 	$props2{'Record.MountCmd'} = $cmd;
 
