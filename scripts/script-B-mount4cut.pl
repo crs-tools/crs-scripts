@@ -128,6 +128,7 @@ sub prepareTicket {
 	# prepare attributes for writeback
 
 	my %props2 = ();
+	$props2{'Processing.Framerate'} = $fuse->{'fps'};
 	$props2{'Record.Room'} = $room if (defined($room));
 	$props2{'Record.DurationSeconds'} = $paddedlength;
 	$props2{'Record.DurationFrames'} = $paddedlength * $fuse->{'fps'};
