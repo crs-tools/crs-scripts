@@ -61,6 +61,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $out = qx( $cmd 2>&1 );
 	my $return = $?;
 	print " exit=$return\n";
+	$tracker->addLog($tid, $out)
 	
 	if ($return eq '0') {
 		$tracker->setTicketDone($tid, "Encoding postprocessor: rsync completed.");
