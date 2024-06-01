@@ -55,18 +55,15 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	print " OK\n";
 	my $destfile = $props->{'Publishing.UploadTarget'} . '/' . $props->{'Fahrplan.ID'} . "-" . 
 		$props->{'EncodingProfile.Slug'} . '.' . $props->{'EncodingProfile.Extension'};
-	# support old property as fallback
-	my $opts = $props->{'Publishing.UploadOptions'};
-	$opts = $props->{'Processing.Postprocessing.Options'} unless defined ($opts);
-	$opts = "" unless defined ($opts);
 	print "$srcfile (in) -> $destfile (out) ...";
-	my $cmd = "scp -B -p $opts '$srcfile' '$destfile'";
+	# rsync: verbose, '-e ssh', keep partially transferred files, keep mtimes
+	my $cmd = "rsync --verbose --rsh=ssh --partial --times '$srcfile' '$destfile'";
 	my $out = qx( $cmd 2>&1 );
 	my $return = $?;
 	print " exit=$return\n";
 	
 	if ($return eq '0') {
-		$tracker->setTicketDone($tid, 'Encoding postprocessor: scp completed.');
+		$tracker->setTicketDone($tid, "Encoding postprocessor: rsync completed.");
 		# indicate short sleep to wrapper script
 		exit(100);
 	} else {
