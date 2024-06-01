@@ -68,9 +68,6 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 		# indicate short sleep to wrapper script
 		exit(100);
 	} else {
-		my $error = $out;
-		$error =~ s/.*(.{1,80})$/$1/m;
-		$error =~ s/[\r\n]//mg;
-		$tracker->setTicketFailed($tid, "Encoding postprocessor: command '$cmd' failed! Output ends with: '$error'");
+		$tracker->setTicketFailed($tid, "Encoding postprocessor: command '$cmd' failed (exitcode $return)!");
 	}
 }
