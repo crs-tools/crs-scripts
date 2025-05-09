@@ -318,6 +318,8 @@ sub downloadResult {
 	$curl->setopt(WWW::Curl::Easy::CURLOPT_URL, $url);
 	$curl->setopt(CURLOPT_CONNECTTIMEOUT, 5);
 	$curl->setopt(CURLOPT_TIMEOUT, 1800);
+	$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
+	$curl->setopt(CURLOPT_MAXREDIRS, 2);
 
 	# set progress callback
 	$self->{dl} = 0;
