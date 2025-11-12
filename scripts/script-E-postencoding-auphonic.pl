@@ -83,14 +83,14 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 			exit(100);
 		} else {
 			$log = join ("\n", $ex->getErrors());
-			$tracker->setTicketFailed($tid, 'postencoding failed:' . $log);
+			$tracker->setTicketFailed($tid, 'Postencoding failed: ' . $log);
 			exit;
 		}
 	}
 
 	# check config properties for auphonic
 	unless (defined ($props->{'Processing.Auphonic.Token'}) and defined ($props->{'Processing.Auphonic.Preset'})) {
-			$tracker->setTicketFailed($tid, "postencoding with Auphonic failed: Property Processing.Auphonic.Token or Processing.Auphonic.Preset missing!");
+			$tracker->setTicketFailed($tid, "Postencoding with Auphonic failed: Property Processing.Auphonic.Token or Processing.Auphonic.Preset missing!");
 			die;
 	}
 
@@ -101,7 +101,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	my $oldMD5 = $props->{'Processing.Auphonic.SourceFileHash'};
 	my $sourcefile = $paths->getPath('Tmp').'/'.$vid.'-'.$props->{'EncodingProfile.Slug'}.".".$props->{'EncodingProfile.Extension'};
 	if (! -f $sourcefile) {
-		print STDERR "WARNING: no source file found ('$sourcefile'), possibly repeating production uneccessarily\n";
+		print STDERR "WARNING: No source file found ('$sourcefile'), possibly repeating production uneccessarily\n";
 		($oldMD5, $sourcefile) = (undef, undef);
 	}
 
