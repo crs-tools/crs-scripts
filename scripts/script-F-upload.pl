@@ -6,7 +6,7 @@ use boolean;
 use Sys::Hostname;
 
 my $tracker = CRS::Tracker::Client->new();
-my $state = 'uploading';
+my $state = $ENV{CRS_STATE} // 'uploading';
 my $ticket;
 if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
         my $filter = {};
@@ -38,7 +38,7 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	if (defined($props->{'Publishing.Upload.SkipSlaves'}) && $props->{'EncodingProfile.IsMaster'} ne 'yes') {
 		my $hostname = hostname;
     if (defined($hostname) && index(',' . $props->{'Publishing.Upload.SkipSlaves'} . ',', ",$hostname,") >= 0) {
-			print "\nskipping file upload because it belongs to a slave ticket and this worker is in the skip list!\n";
+			print "\nskipping file upload because it belongs to a sub ticket and this worker is in the skip list!\n";
 			sleep 1;
 			$tracker->setTicketDone($tid, "Encoding $state: upload skipped due to $hostname is part of worker skip list.");
 			exit(100);

@@ -5,20 +5,24 @@ use boolean;
 use Sys::Hostname;
 
 my $tracker = CRS::Tracker::Client->new();
+my $state = $ENV{CRS_STATE} // 'postprocessing';
 my $ticket;
+
 if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
         my $filter = {};
         $filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
-        $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing', $filter);
+        $ticket = $tracker->assignNextUnassignedForState('encoding', $state, $filter);
 } else {
-        $ticket = $tracker->assignNextUnassignedForState('encoding', 'postprocessing');
+        my $filter = {};
+        $filter->{'EncodingProfile.IsMaster'} = 'no';
+        $ticket = $tracker->assignNextUnassignedForState('encoding', $state, $filter);
 }
 
 if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
-	print "currently no tickets for postprocessing\n";
+	print "currently no tickets for $state\n";
 } else {
 	my $tid = $ticket->{id};
-	print "postprocessing ticket # $tid\n";
+	print "$state ticket # $tid\n";
 
 	my $props = $tracker->getTicketProperties($tid);
 	if (defined($props->{'Fahrplan.Recording.Optout'}) && $props->{'Fahrplan.Recording.Optout'} eq '1') {
@@ -34,9 +38,9 @@ if (!defined($ticket) || ref($ticket) eq 'boolean' || $ticket->{id} <= 0) {
 	}
 
 	if ($props->{'EncodingProfile.IsMaster'} eq 'yes') {
-		$tracker->addLog($tid, "WARNING: applying postproc dummy on master ticket");
+		$tracker->addLog($tid, "WARNING: applying $state dummy on master ticket");
 	}
 
-	$tracker->setTicketDone($tid, 'Encoding postprocessor: upload skipped via postproc dummy.');
+	$tracker->setTicketDone($tid, "Encoding $state skipped via dummy");
 	exit(100);
 }
