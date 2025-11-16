@@ -5,6 +5,8 @@ use CRS::Fuse::VDV;
 use CRS::Tracker::Client;
 
 use POSIX qw(strftime);
+use DateTime;
+use DateTime::Format::Strptime;
 use boolean;
 
 my $target_type = 'recording';
@@ -12,14 +14,20 @@ my $target_state = 'recording';
 
 # default padding of record start and stop:
 my $startpadding = 300;
-my $endpadding = 900;
+
+# tracker time format
+my $strptime_tracker = DateTime::Format::Strptime->new(
+    pattern   => '%F %T%z',
+    locale    => 'de_DE',
+    time_zone => 'Europe/Berlin',
+);
 
 # filter recording events
 print "my time base now: " . strftime('%FT%TZ', gmtime(time)). "\n";
 my $start_filter = {};
 $start_filter->{'Record.StartedBefore'} = strftime('%FT%TZ', gmtime(time + $startpadding));
 my $end_filter = {};
-$end_filter->{'Record.EndedBefore'} = strftime('%FT%TZ', gmtime(time - $endpadding));
+$end_filter->{'Record.EndedBefore'} = strftime('%FT%TZ', gmtime(time));
 if (defined($ENV{'CRS_ROOM'}) && $ENV{'CRS_ROOM'} ne '') {
 	$start_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
 	$end_filter->{'Fahrplan.Room'} = $ENV{'CRS_ROOM'};
@@ -67,9 +75,20 @@ if (!($tickets) || 0 == scalar(@$tickets)) {
 print "found " . scalar(@$tickets) ." tickets\n";
 foreach (@$tickets) {
     my $ticket = $_;
-    print "found ticket #" . $ticket->{id} . ". set done. ";
+    my $props = $tracker->getTicketProperties($ticket->{id});
+    print "found ticket #" . $ticket->{id} . ".";
 
-    $tracker->setTicketDone($ticket->{id});
+    my $endpadding = 900;
+    if (defined($props->{'Record.EndPadding'})) {
+        $endpadding = $props->{'Record.EndPadding'};
+    }
+
+    my $end_time = $strptime_tracker->parse_datetime($ticket->{time_end});
+    $end_time->add(seconds => $endpadding);
+    if (DateTime->compare($end_time, DateTime->now) == -1) {
+        print "set done. ";
+        $tracker->setTicketDone($ticket->{id});
+    }
     print "sleeping a second...\n";
     sleep 1;
 }
