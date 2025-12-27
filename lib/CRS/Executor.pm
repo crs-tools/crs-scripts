@@ -127,8 +127,11 @@ sub load_job {
     my $jobfile = shift;
     die 'You need to supply a job!' unless $jobfile;
 
+    # XML::Simple requires UTF-8 bytes; encode chars and pass scalar ref to avoid wide-char errors
+    $jobfile = encode_utf8($jobfile) if utf8::is_utf8($jobfile);
+
     my $job = XMLin(
-        $jobfile,
+        \$jobfile,
         ForceArray => [
             'option',
             'task',
