@@ -53,7 +53,8 @@ use charnames ':full';
 use File::Spec;
 use File::Which qw(which);
 use IPC::Run3;
-use XML::Simple qw(:strict);
+use XML::LibXML;
+use XML::LibXML::Simple;
 use Encode;
 
 use constant FILE_OK => 0;
@@ -124,23 +125,15 @@ sub asciify {
 # static method, load job XML into object
 sub load_job {
 
-    my $jobfile = shift;
+    my ($jobfile) = @_;
     die 'You need to supply a job!' unless $jobfile;
 
-    # XML::Simple requires UTF-8 bytes; encode chars and pass scalar ref to avoid wide-char errors
-    $jobfile = encode_utf8($jobfile) if utf8::is_utf8($jobfile);
-
-    my $job = XMLin(
-        \$jobfile,
-        ForceArray => [
-            'option',
-            'task',
-            'tasks',
-            'error',
-        ],
-        KeyAttr => ['id'],
+    my $xs = XML::LibXML::Simple->new(
+        ForceArray => [qw(option task tasks error)],
+        KeyAttr   => ['id'],
     );
-    return $job;
+
+    return $xs->XMLin($jobfile);
 }
 
 # static method, escape/remove shell quotes
