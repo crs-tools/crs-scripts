@@ -11,7 +11,7 @@ Homepage: https://github.com/crs-tools/crs-scripts
 Package: crs-scripts
 Architecture: any
 Depends: ${misc:Depends}, 
-         ${shlibs:Depends},
+         ${perl:Depends},
          fuse-ts,
          libboolean-perl,
          libconfig-inifiles-perl,

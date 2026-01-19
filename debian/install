@@ -3,11 +3,9 @@ lib/* opt/crs/tools/tracker3.0/lib
 scripts/* opt/crs/tools/tracker3.0/scripts
 ssl/* opt/crs/tools/tracker3.0/ssl
 example-profile.sh opt/crs/tools/tracker3.0
+example-recording-scheduler.service opt/crs/tools/tracker3.0/doc
 LICENSE opt/crs/tools/tracker3.0
 README.md opt/crs/tools/tracker3.0
-screenrc-encoding-only opt/crs/tools/tracker3.0
-screenrc-scripts opt/crs/tools/tracker3.0
 start opt/crs/tools/tracker3.0
-start-screenrc-encoding-only.sh opt/crs/tools/tracker3.0
-start-screenrc-scripts.sh opt/crs/tools/tracker3.0
+screenrc-relive opt/crs/tools/tracker3.0
 ticket-info.pl opt/crs/tools/tracker3.0

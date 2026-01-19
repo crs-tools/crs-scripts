@@ -1,3 +1,10 @@
+crs-scripts (2026.01.19.1) stable; urgency=low
+
+  * replace XML::Simple with a LibXML equivalent (thx to v0tti)
+  * remove most screen-based stuff
+
+ -- atze <atze@fem.tu-ilmenau.de>  Mon, 19 Jan 2026 18:22:38 +0100
+
 crs-scripts (2021.12.28.1) stable; urgency=low
 
   * Resurrect room filter for scripts (needs update in tracker, too)
@@ -8,4 +15,4 @@ crs-scripts (2020.10.19.1) stable; urgency=low
 
   * Initial release
 
- -- derchris <derchris@me.com>  Mon, 19 Oct 2020 06:24:00 +0200 
+ -- derchris <derchris@me.com>  Mon, 19 Oct 2020 06:24:00 +0200
