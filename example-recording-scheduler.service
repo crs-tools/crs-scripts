@@ -21,6 +21,9 @@ Environment=CRS_TOKEN=bar
 Environment=CRS_TRACKER=https://example.com/rpc
 # If you want, you can also override HTTPS_CA_DIR and SLEEP_TIME here
 
+# If you want to inhibit system shutdown for this service, set this to "yes"
+Environment=SYSTEMD_INHIBIT=no
+
 # Restart always, except if the script exits with code 250 (which means
 # the worker requested termination)
 Restart=always

@@ -59,6 +59,12 @@ echo "    Script:  ${SCRIPT_NAME}"
 echo "Sleep time:  ${SLEEP_TIME}s"
 echo "-------------------------------------------"
 
+if [ "${SYSTEMD_INHIBIT}" == "yes" ]
+then
+	SCRIPT="/usr/bin/systemd-inhibit --what=shutdown:sleep:idle:handle-power-key:handle-suspend-key:handle-hibernate-key \
+		--who=""CRS-Runner-${SCRIPT_NAME}"" --why=Encoding-stuff --no-pager --no-legend ${SCRIPT}"
+fi
+
 ##### BEGIN WHILE LOOP #####
 while true
 do
