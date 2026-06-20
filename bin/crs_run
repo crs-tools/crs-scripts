@@ -16,6 +16,8 @@ shift # dont give scriptname as param to script
 SLEEP_TIME=${SLEEP_TIME:-30}
 export HTTPS_CA_DIR=${HTTPS_CA_DIR:-/etc/ssl/certs}
 
+CHECK_DIR=${CHECK_DIR:-/usr/local/lib/crs-scripts/check-scripts.d}
+
 # short sleep time after work has done
 SLEEP_TIME_SHORT=2
 # long sleep time if no project assigned
@@ -62,6 +64,22 @@ echo "-------------------------------------------"
 ##### BEGIN WHILE LOOP #####
 while true
 do
+    # Run checks
+    if [ -d "$CHECK_DIR" ]; then
+        for file in $CHECK_DIR/*.sh; do
+            if [ -x "${file}" ]; then
+                "${file}"
+                exit_code=$?
+
+                if [[ $exit_code != 0 ]]; then
+                    check_name=$(basename "$file")
+                    echo "Check $check_name failed with code: $exit_code"
+                    exit 0
+                fi
+            fi
+        done
+    fi
+
     echo "------- executing ${SCRIPT} - talking to tracker instance ${CRS_TRACKER} -------"
     "${SCRIPT}" $@
     EC=$?
