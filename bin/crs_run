@@ -74,7 +74,7 @@ do
                 if [[ $exit_code != 0 ]]; then
                     check_name=$(basename "$file")
                     echo "Check $check_name failed with code: $exit_code"
-                    exit 0
+                    exit $exit_code
                 fi
             fi
         done
