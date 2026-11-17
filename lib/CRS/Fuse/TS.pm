@@ -77,10 +77,10 @@ sub doFuseMount {
 	$self->doFuseUnmount($vid, $room) if $self->isVIDmounted($vid, $room);
 	my $files;
 	if (defined($length)) {
-		$files = int($length * $self->{fps} / $self->{defaultpieceframes}) + 1;
+		$files = int($length / $self->{defaultpiecetime}) + 1;
 	} else {
 		$files = $self->{defaultfiles};
-		$length = $files * $self->{defaultpieceframes} / $self->{fps};
+		$length = $files * $self->{defaultpiecetime};
 	}
 	my $frames = $length * $self->{fps};
 	my $prefix = $self->{'Processing.Path.CaptureFilePrefix'};
