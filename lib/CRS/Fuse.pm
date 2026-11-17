@@ -6,7 +6,7 @@ $default->{'binpath'} = '/usr/bin';
 
 $default->{'fps'} = 25;
 $default->{'defaultfiles'} = 20;  # Anzahl der Schnipsel, wenn keine Anzahl gegeben wird (Standard bei 6min-Schnipsel == 2h)
-$default->{'defaultpieceframes'} = 3*60*$default->{'fps'};  # Laenge eines Schnipsels in Frames (Standard: 3 min.)
+$default->{'defaultpiecetime'} = 3*60;  # Laenge eines Schnipsels in Sekunden (Standard: 3 min.)
 
 $default->{'debug'} = 1;
 
